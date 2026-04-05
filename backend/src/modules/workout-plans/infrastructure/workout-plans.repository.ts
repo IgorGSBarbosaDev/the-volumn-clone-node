@@ -105,7 +105,10 @@ export async function listOwnedWorkoutPlans(userId: string, pagination: Paginati
   }
 }
 
-export async function createWorkoutPlan(userId: string, data: { accent?: string | null; focusLabel?: string | null; name: string }) {
+export async function createWorkoutPlan(
+  userId: string,
+  data: { accent?: WorkoutPlanSummary['accent']; focusLabel?: string | null; name: string },
+) {
   const now = new Date()
 
   return db.workoutPlan.create({
@@ -132,7 +135,7 @@ export async function findOwnedWorkoutPlan(planId: string, ownerUserId: string) 
 
 export async function updateWorkoutPlan(
   planId: string,
-  data: { accent?: string | null; focusLabel?: string | null; name?: string },
+  data: { accent?: WorkoutPlanSummary['accent']; focusLabel?: string | null; name?: string },
 ) {
   return db.workoutPlan.update({
     where: {

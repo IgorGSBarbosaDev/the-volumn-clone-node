@@ -468,6 +468,112 @@ paths:
           description: Missing, invalid, or expired access token
         "404":
           description: Plan set not found
+  /exercises:
+    get:
+      summary: Browse accessible exercises
+      description: Returns the authenticated user's accessible exercise catalog, combining global default exercises with their own custom exercises only. Results are sorted by name ascending.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: search
+          schema:
+            type: string
+            maxLength: 120
+          description: Case-insensitive name search across accessible exercises.
+        - in: query
+          name: muscleGroup
+          schema:
+            type: string
+            enum: [CHEST, BACK, SHOULDERS, BICEPS, TRICEPS, QUADS, HAMSTRINGS, GLUTES, CALVES, CORE, FULL_BODY, OTHER]
+        - in: query
+          name: source
+          schema:
+            type: string
+            enum: [DEFAULT, CUSTOM]
+          description: When omitted, returns both default and owned custom exercises.
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - in: query
+          name: pageSize
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        "200":
+          description: Paginated accessible exercise catalog
+        "400":
+          description: Invalid exercise query parameters
+        "401":
+          description: Missing, invalid, or expired access token
+    post:
+      summary: Create custom exercise
+      description: Creates a custom exercise owned by the authenticated user. Names are trimmed before validation and persistence.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, muscleGroup]
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 120
+                muscleGroup:
+                  type: string
+                  enum: [CHEST, BACK, SHOULDERS, BICEPS, TRICEPS, QUADS, HAMSTRINGS, GLUTES, CALVES, CORE, FULL_BODY, OTHER]
+      responses:
+        "201":
+          description: Created custom exercise
+        "400":
+          description: Invalid custom exercise payload
+        "401":
+          description: Missing, invalid, or expired access token
+  /exercises/{id}/history:
+    get:
+      summary: Get accessible exercise history
+      description: Returns work-set-only history for an accessible exercise using completed sessions owned by the authenticated user. Warm-up and feeder sets are excluded.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - in: query
+          name: pageSize
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        "200":
+          description: Paginated exercise history for the authenticated user
+        "400":
+          description: Invalid pagination parameters
+        "401":
+          description: Missing, invalid, or expired access token
+        "404":
+          description: Exercise not found or not accessible to the current user
   /sessions:
     get:
       summary: List workout sessions

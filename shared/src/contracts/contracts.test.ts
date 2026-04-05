@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  createExerciseRequestSchema,
   createWorkoutPlanRequestSchema,
   errorEnvelopeSchema,
   loginRequestSchema,
@@ -43,6 +44,16 @@ describe('shared contracts', () => {
     ).toBeDefined()
 
     expect(
+      createExerciseRequestSchema.parse({
+        name: '  Cable Fly  ',
+        muscleGroup: 'CHEST',
+      }),
+    ).toMatchObject({
+      name: 'Cable Fly',
+      muscleGroup: 'CHEST',
+    })
+
+    expect(
       errorEnvelopeSchema.parse({
         error: {
           code: 'VALIDATION_ERROR',
@@ -60,5 +71,14 @@ describe('shared contracts', () => {
     ).toBeDefined()
 
     expect(() => updateCurrentUserRequestSchema.parse({})).toThrowError('At least one field must be provided')
+  })
+
+  it('rejects blank exercise names after trimming', () => {
+    expect(() =>
+      createExerciseRequestSchema.parse({
+        name: '   ',
+        muscleGroup: 'CHEST',
+      }),
+    ).toThrow()
   })
 })

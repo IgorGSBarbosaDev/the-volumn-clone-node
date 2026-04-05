@@ -1,11 +1,12 @@
 import { ApiError } from '../../../shared/http/api-error.js'
-import { findExerciseById } from '../infrastructure/exercise-access.repository.js'
+import { EXERCISE_ERRORS } from '../domain/exercises.constants.js'
+import { findExerciseById } from '../infrastructure/exercises.repository.js'
 
 export async function getAccessibleExerciseById(userId: string, exerciseId: string) {
   const exercise = await findExerciseById(exerciseId)
 
   if (!exercise) {
-    throw new ApiError(404, 'EXERCISE_NOT_FOUND', 'Exercise not found')
+    throw new ApiError(404, EXERCISE_ERRORS.exerciseNotFound.code, EXERCISE_ERRORS.exerciseNotFound.message)
   }
 
   if (exercise.source === 'DEFAULT') {
@@ -13,7 +14,7 @@ export async function getAccessibleExerciseById(userId: string, exerciseId: stri
   }
 
   if (exercise.ownerUserId !== userId) {
-    throw new ApiError(404, 'EXERCISE_NOT_FOUND', 'Exercise not found')
+    throw new ApiError(404, EXERCISE_ERRORS.exerciseNotFound.code, EXERCISE_ERRORS.exerciseNotFound.message)
   }
 
   return exercise

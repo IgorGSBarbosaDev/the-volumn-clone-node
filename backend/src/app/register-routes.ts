@@ -1,5 +1,6 @@
 import type { Express } from 'express'
 import { createAuthRouter } from '../modules/auth/http/auth.routes.js'
+import { requireAuth } from '../modules/auth/http/require-auth.js'
 import { createExercisesRouter } from '../modules/exercises/http/exercises.routes.js'
 import { createSessionsRouter } from '../modules/sessions/http/sessions.routes.js'
 import { createUsersRouter } from '../modules/users/http/users.routes.js'
@@ -18,9 +19,9 @@ export function registerRoutes(app: Express) {
   })
 
   app.use('/auth', createAuthRouter())
-  app.use('/users', createUsersRouter())
-  app.use('/workout-plans', createWorkoutPlansRouter())
-  app.use('/plan-sets', createPlanSetsRouter())
-  app.use('/exercises', createExercisesRouter())
-  app.use('/sessions', createSessionsRouter())
+  app.use('/users', requireAuth, createUsersRouter())
+  app.use('/workout-plans', requireAuth, createWorkoutPlansRouter())
+  app.use('/plan-sets', requireAuth, createPlanSetsRouter())
+  app.use('/exercises', requireAuth, createExercisesRouter())
+  app.use('/sessions', requireAuth, createSessionsRouter())
 }

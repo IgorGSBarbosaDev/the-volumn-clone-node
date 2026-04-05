@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import {
+  activeSessionResponseSchema,
+  createExerciseRequestSchema,
   createWorkoutPlanRequestSchema,
   errorEnvelopeSchema,
   loginRequestSchema,
+  updateCurrentUserRequestSchema,
   registerRequestSchema,
   startSessionRequestSchema,
 } from '../index.js'
@@ -28,6 +31,8 @@ describe('shared contracts', () => {
   })
 
   it('parses core workout payloads and errors', () => {
+    expect(activeSessionResponseSchema.parse(null)).toBeNull()
+
     expect(
       createWorkoutPlanRequestSchema.parse({
         name: 'Push Day',
@@ -42,6 +47,16 @@ describe('shared contracts', () => {
     ).toBeDefined()
 
     expect(
+      createExerciseRequestSchema.parse({
+        name: '  Cable Fly  ',
+        muscleGroup: 'CHEST',
+      }),
+    ).toMatchObject({
+      name: 'Cable Fly',
+      muscleGroup: 'CHEST',
+    })
+
+    expect(
       errorEnvelopeSchema.parse({
         error: {
           code: 'VALIDATION_ERROR',
@@ -49,5 +64,24 @@ describe('shared contracts', () => {
         },
       }),
     ).toBeDefined()
+  })
+
+  it('requires at least one current-user field for profile updates', () => {
+    expect(
+      updateCurrentUserRequestSchema.parse({
+        theme: 'green',
+      }),
+    ).toBeDefined()
+
+    expect(() => updateCurrentUserRequestSchema.parse({})).toThrowError('At least one field must be provided')
+  })
+
+  it('rejects blank exercise names after trimming', () => {
+    expect(() =>
+      createExerciseRequestSchema.parse({
+        name: '   ',
+        muscleGroup: 'CHEST',
+      }),
+    ).toThrow()
   })
 })

@@ -27,7 +27,7 @@ export const exercisesQuerySchema = z.object({
 })
 
 export const createExerciseRequestSchema = z.object({
-  name: z.string().min(1).max(120),
+  name: z.string().trim().min(1).max(120),
   muscleGroup: muscleGroupSchema,
 })
 

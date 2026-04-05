@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  activeSessionResponseSchema,
   createExerciseRequestSchema,
   createWorkoutPlanRequestSchema,
   errorEnvelopeSchema,
@@ -30,6 +31,8 @@ describe('shared contracts', () => {
   })
 
   it('parses core workout payloads and errors', () => {
+    expect(activeSessionResponseSchema.parse(null)).toBeNull()
+
     expect(
       createWorkoutPlanRequestSchema.parse({
         name: 'Push Day',

@@ -5,34 +5,58 @@ import {
   startSessionRequestSchema,
 } from '@the-volumn/shared'
 import { Router } from 'express'
+import {
+  completeOwnedWorkoutSession,
+  createOwnedSessionSet,
+  getOwnedActiveWorkoutSession,
+  getOwnedWorkoutSession,
+  listWorkoutSessions,
+  startOwnedWorkoutSession,
+} from '../application/sessions.service.js'
+import { getAuthContext } from '../../../shared/http/auth-context.js'
 import { parseBody, parseQuery } from '../../../shared/http/validate.js'
-import { notImplemented } from '../../../shared/lib/not-implemented.js'
 
 export function createSessionsRouter() {
   const router = Router()
 
-  router.post('/', (request, response) => {
-    parseBody(request, startSessionRequestSchema)
-    notImplemented('Sessions start')
-    return response
+  router.post('/', async (request, response) => {
+    const auth = getAuthContext(request)
+    const payload = parseBody(request, startSessionRequestSchema)
+    const result = await startOwnedWorkoutSession(auth.userId, payload)
+    return response.status(201).json(result)
   })
 
-  router.get('/', (request, response) => {
-    parseQuery(request, paginationQuerySchema)
-    notImplemented('Sessions list')
-    return response
+  router.get('/', async (request, response) => {
+    const auth = getAuthContext(request)
+    const query = parseQuery(request, paginationQuerySchema)
+    const result = await listWorkoutSessions(auth.userId, query)
+    return response.status(200).json(result)
   })
 
-  router.post('/:id/sets', (request, response) => {
-    parseBody(request, createSessionSetRequestSchema)
-    notImplemented('Sessions create set')
-    return response
+  router.get('/active', async (request, response) => {
+    const auth = getAuthContext(request)
+    const result = await getOwnedActiveWorkoutSession(auth.userId)
+    return response.status(200).json(result)
   })
 
-  router.patch('/:id/complete', (request, response) => {
-    parseBody(request, completeSessionRequestSchema)
-    notImplemented('Sessions complete')
-    return response
+  router.get('/:id', async (request, response) => {
+    const auth = getAuthContext(request)
+    const result = await getOwnedWorkoutSession(auth.userId, request.params.id)
+    return response.status(200).json(result)
+  })
+
+  router.post('/:id/sets', async (request, response) => {
+    const auth = getAuthContext(request)
+    const payload = parseBody(request, createSessionSetRequestSchema)
+    const result = await createOwnedSessionSet(auth.userId, request.params.id, payload)
+    return response.status(201).json(result)
+  })
+
+  router.patch('/:id/complete', async (request, response) => {
+    const auth = getAuthContext(request)
+    const payload = parseBody(request, completeSessionRequestSchema)
+    const result = await completeOwnedWorkoutSession(auth.userId, request.params.id, payload)
+    return response.status(200).json(result)
   })
 
   return router

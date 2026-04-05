@@ -15,6 +15,10 @@ export const WORKOUT_PLAN_ERRORS = {
     code: 'WORKOUT_PLAN_NOT_FOUND',
     message: 'Workout plan not found',
   },
+  planReferencedBySessions: {
+    code: 'WORKOUT_PLAN_HAS_SESSIONS',
+    message: 'Workout plan cannot be deleted after workout sessions have been recorded from it',
+  },
   planSetNotFound: {
     code: 'PLAN_SET_NOT_FOUND',
     message: 'Plan set not found',

@@ -1,4 +1,5 @@
 import {
+  activeSessionResponseSchema,
   createExerciseRequestSchema,
   createWorkoutPlanRequestSchema,
   loginRequestSchema,
@@ -28,6 +29,8 @@ describe('shared contracts', () => {
   })
 
   it('accepts baseline workout payloads', () => {
+    expect(activeSessionResponseSchema.parse(null)).toBeNull()
+
     expect(
       createWorkoutPlanRequestSchema.parse({
         name: 'Push Day',

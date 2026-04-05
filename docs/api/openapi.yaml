@@ -243,6 +243,7 @@ paths:
           description: Workout plan not found
     delete:
       summary: Delete workout plan
+      description: Deletes an owned workout plan only when it has not been used to record workout sessions. Historical session provenance is preserved.
       security:
         - bearerAuth: []
       parameters:
@@ -259,6 +260,8 @@ paths:
           description: Missing, invalid, or expired access token
         "404":
           description: Workout plan not found
+        "409":
+          description: Workout plan is referenced by recorded workout sessions
   /workout-plans/{id}/exercises:
     post:
       summary: Add exercise to workout plan
@@ -577,15 +580,169 @@ paths:
   /sessions:
     get:
       summary: List workout sessions
+      description: Returns the authenticated user's workout sessions ordered by most recent start time. Summaries include session status, source plan name, and total performed-set count.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - in: query
+          name: pageSize
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        "200":
+          description: Paginated session list
+        "400":
+          description: Invalid pagination parameters
+        "401":
+          description: Missing, invalid, or expired access token
+    post:
+      summary: Start workout session
+      description: Starts an active workout session from an owned workout plan, snapshots the plan structure, and rejects creation when another active session already exists.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [workoutPlanId]
+              properties:
+                workoutPlanId:
+                  type: string
+                  format: uuid
+      responses:
+        "201":
+          description: Session started with plan snapshot and empty performed-set list
+        "400":
+          description: Invalid session-start payload
+        "401":
+          description: Missing, invalid, or expired access token
+        "404":
+          description: Workout plan not found
+        "409":
+          description: Another active workout session already exists for the current user
+  /sessions/active:
+    get:
+      summary: Get active workout session
+      description: Returns the authenticated user's current active session detail, or `null` when no active session exists.
       security:
         - bearerAuth: []
       responses:
         "200":
-          description: Paginated session list
-    post:
-      summary: Start workout session
+          description: Active session detail or `null`
+        "401":
+          description: Missing, invalid, or expired access token
+  /sessions/{id}:
+    get:
+      summary: Get workout session detail
+      description: Returns a full owned workout-session detail payload including the snapped source plan and ordered performed sets.
       security:
         - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Workout session detail
+        "401":
+          description: Missing, invalid, or expired access token
+        "404":
+          description: Workout session not found
+  /sessions/{id}/sets:
+    post:
+      summary: Append performed set to active session
+      description: Appends a performed set to an owned active session, evaluates PR eligibility at write time, and rejects exercises outside the session's snapped plan structure.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [exerciseId, setType, weightKg, reps]
+              properties:
+                exerciseId:
+                  type: string
+                  format: uuid
+                setType:
+                  type: string
+                  enum: [WARM_UP, FEEDER, NORMAL, FAILURE, DROP_SET]
+                weightKg:
+                  type: number
+                  minimum: 0
+                  maximum: 1000
+                reps:
+                  type: integer
+                  minimum: 1
+                  maximum: 100
+                notes:
+                  type: string
+                  nullable: true
+                  maxLength: 500
       responses:
         "201":
-          description: Session started
+          description: Created performed set with stored `isPR` flag
+        "400":
+          description: Invalid set payload or exercise is not part of the session plan snapshot
+        "401":
+          description: Missing, invalid, or expired access token
+        "404":
+          description: Workout session not found
+        "409":
+          description: Workout session is no longer active
+  /sessions/{id}/complete:
+    patch:
+      summary: Complete workout session
+      description: Completes an owned active session, persists `completedAt` and `durationSeconds`, and returns the finalized immutable session detail.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                completedAt:
+                  type: string
+                  format: date-time
+      responses:
+        "200":
+          description: Completed workout session detail
+        "400":
+          description: Invalid completion payload or completion time before session start
+        "401":
+          description: Missing, invalid, or expired access token
+        "404":
+          description: Workout session not found
+        "409":
+          description: Workout session is no longer active

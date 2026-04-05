@@ -153,6 +153,16 @@ export async function deleteWorkoutPlan(planId: string) {
   })
 }
 
+export async function hasWorkoutSessions(planId: string) {
+  const session = await db.workoutSession.findFirst({
+    where: {
+      workoutPlanId: planId,
+    },
+  })
+
+  return session !== null
+}
+
 export async function getWorkoutPlanDetail(planId: string, ownerUserId: string): Promise<WorkoutPlanDetail | null> {
   const workoutPlan = await findOwnedWorkoutPlan(planId, ownerUserId)
 

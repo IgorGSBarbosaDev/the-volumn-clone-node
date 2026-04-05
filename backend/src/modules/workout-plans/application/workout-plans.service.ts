@@ -22,6 +22,7 @@ import {
   findOwnedWorkoutPlan,
   findWorkoutPlanOwnerById,
   getWorkoutPlanDetail,
+  hasWorkoutSessions,
   listOwnedWorkoutPlans,
   listPlanExercises,
   removePlanExercise,
@@ -92,6 +93,14 @@ export async function deleteOwnedWorkoutPlan(userId: string, planId: string) {
 
   if (!workoutPlan) {
     throw new ApiError(404, WORKOUT_PLAN_ERRORS.planNotFound.code, WORKOUT_PLAN_ERRORS.planNotFound.message)
+  }
+
+  if (await hasWorkoutSessions(planId)) {
+    throw new ApiError(
+      409,
+      WORKOUT_PLAN_ERRORS.planReferencedBySessions.code,
+      WORKOUT_PLAN_ERRORS.planReferencedBySessions.message,
+    )
   }
 
   await deleteWorkoutPlan(planId)

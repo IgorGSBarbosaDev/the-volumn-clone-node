@@ -70,11 +70,23 @@ type StoredPlanSet = {
   notes: string | null
 }
 
+type StoredWorkoutSession = {
+  id: string
+  ownerUserId: string
+  workoutPlanId: string
+  status: 'ACTIVE' | 'COMPLETED'
+  startedAt: Date
+  completedAt: Date | null
+  durationSeconds: number | null
+  planSnapshot: Record<string, unknown>
+}
+
 type MockState = {
   exercises: StoredExercise[]
   planExercises: StoredPlanExercise[]
   planSets: StoredPlanSet[]
   refreshTokens: StoredRefreshToken[]
+  workoutSessions: StoredWorkoutSession[]
   users: StoredUser[]
   workoutPlans: StoredWorkoutPlan[]
 }
@@ -113,6 +125,7 @@ function createState(): MockState {
     planExercises: [],
     planSets: [],
     refreshTokens: [],
+    workoutSessions: [],
     users: [],
     workoutPlans: [],
   }
@@ -281,6 +294,11 @@ const mockDb = {
       state.planSets = state.planSets.filter((planSet) => !removedExerciseIds.includes(planSet.planExerciseId))
 
       return workoutPlan
+    },
+  },
+  workoutSession: {
+    async findFirst({ where }: { where: Record<string, unknown> }) {
+      return state.workoutSessions.find((session) => matchesWhere(session, where)) ?? null
     },
   },
   planExercise: {
@@ -880,6 +898,36 @@ describe('workout plans and planned structure', () => {
     expect(state.workoutPlans).toHaveLength(0)
     expect(state.planExercises).toHaveLength(0)
     expect(state.planSets).toHaveLength(0)
+  })
+
+  it('blocks deleting a workout plan that already has recorded workout sessions', async () => {
+    const app = createTestApp()
+    const { accessToken, userId } = await registerUser({
+      app,
+      displayName: 'Alex',
+      email: 'alex@example.com',
+      role: 'STUDENT',
+    })
+    const created = await createPlan({ accessToken, app })
+
+    state.workoutSessions.push({
+      id: '550e8400-e29b-41d4-a716-446655440900',
+      ownerUserId: userId,
+      workoutPlanId: created.body.id as string,
+      status: 'COMPLETED',
+      startedAt: new Date('2026-04-01T16:00:00.000Z'),
+      completedAt: new Date('2026-04-01T17:00:00.000Z'),
+      durationSeconds: 3600,
+      planSnapshot: {},
+    })
+
+    const response = await request(app)
+      .delete(`/workout-plans/${created.body.id as string}`)
+      .set('Authorization', `Bearer ${accessToken}`)
+
+    expect(response.status).toBe(409)
+    expect(response.body.error.code).toBe('WORKOUT_PLAN_HAS_SESSIONS')
+    expect(state.workoutPlans).toHaveLength(1)
   })
 
   it('returns 401 for protected workout-plan endpoints without a bearer token', async () => {

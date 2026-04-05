@@ -15,3 +15,20 @@ const envSchema = z.object({
 })
 
 export const env = envSchema.parse(process.env)
+
+const disallowedProductionSecrets = new Set([
+  'development-access-secret',
+  'development-refresh-secret',
+  'change-me-access',
+  'change-me-refresh',
+])
+
+if (env.NODE_ENV === 'production') {
+  if (disallowedProductionSecrets.has(env.JWT_ACCESS_SECRET)) {
+    throw new Error('JWT_ACCESS_SECRET must be set to a non-default value in production')
+  }
+
+  if (disallowedProductionSecrets.has(env.JWT_REFRESH_SECRET)) {
+    throw new Error('JWT_REFRESH_SECRET must be set to a non-default value in production')
+  }
+}

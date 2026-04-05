@@ -10,6 +10,10 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
+    refreshCookieAuth:
+      type: apiKey
+      in: cookie
+      name: refreshToken
   schemas:
     ErrorEnvelope:
       type: object
@@ -36,24 +40,44 @@ paths:
   /auth/register:
     post:
       summary: Register a new user
+      description: Creates the user, returns an access token session payload, and sets a rotating refresh token cookie.
       responses:
         "201":
           description: Session created
+        "409":
+          description: Email already in use
+        "429":
+          description: Auth rate limit exceeded
   /auth/login:
     post:
       summary: Login
+      description: Verifies credentials, returns an access token session payload, and sets a rotating refresh token cookie.
       responses:
         "200":
           description: Session created
+        "401":
+          description: Invalid credentials
+        "429":
+          description: Auth rate limit exceeded
   /auth/refresh:
     post:
       summary: Rotate refresh token and access token
+      description: Uses the refresh token cookie to issue a fresh access token and a new refresh token cookie.
+      security:
+        - refreshCookieAuth: []
       responses:
         "200":
           description: Session refreshed
+        "401":
+          description: Missing, invalid, expired, or revoked refresh token
+        "429":
+          description: Auth rate limit exceeded
   /auth/logout:
     post:
       summary: Logout current session
+      description: Invalidates the current refresh token session and clears the refresh token cookie.
+      security:
+        - refreshCookieAuth: []
       responses:
         "204":
           description: Logged out

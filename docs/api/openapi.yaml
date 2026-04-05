@@ -84,18 +84,45 @@ paths:
   /users/me:
     get:
       summary: Get current user
+      description: Returns the authenticated user's current profile summary for app bootstrap and profile rendering.
       security:
         - bearerAuth: []
       responses:
         "200":
           description: Current user profile
+        "401":
+          description: Missing, invalid, or expired access token
+        "404":
+          description: Authenticated user record was not found
     patch:
       summary: Update current user
+      description: Updates the authenticated user's self-service profile fields in V0.1. Only `displayName` and `theme` are editable.
       security:
         - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              minProperties: 1
+              properties:
+                displayName:
+                  type: string
+                  minLength: 2
+                  maxLength: 80
+                theme:
+                  type: string
+                  enum: [rose, green, black]
       responses:
         "200":
           description: Updated user profile
+        "400":
+          description: Invalid profile update payload
+        "401":
+          description: Missing, invalid, or expired access token
+        "404":
+          description: Authenticated user record was not found
   /workout-plans:
     get:
       summary: List workout plans

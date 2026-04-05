@@ -4,6 +4,8 @@ import { themePreferenceSchema, userSummarySchema } from './common.js'
 export const updateCurrentUserRequestSchema = z.object({
   displayName: z.string().min(2).max(80).optional(),
   theme: themePreferenceSchema.optional(),
+}).refine((value) => typeof value.displayName !== 'undefined' || typeof value.theme !== 'undefined', {
+  message: 'At least one field must be provided',
 })
 
 export const currentUserResponseSchema = userSummarySchema

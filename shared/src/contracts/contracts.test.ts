@@ -3,6 +3,7 @@ import {
   createWorkoutPlanRequestSchema,
   errorEnvelopeSchema,
   loginRequestSchema,
+  updateCurrentUserRequestSchema,
   registerRequestSchema,
   startSessionRequestSchema,
 } from '../index.js'
@@ -49,5 +50,15 @@ describe('shared contracts', () => {
         },
       }),
     ).toBeDefined()
+  })
+
+  it('requires at least one current-user field for profile updates', () => {
+    expect(
+      updateCurrentUserRequestSchema.parse({
+        theme: 'green',
+      }),
+    ).toBeDefined()
+
+    expect(() => updateCurrentUserRequestSchema.parse({})).toThrowError('At least one field must be provided')
   })
 })

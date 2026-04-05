@@ -1,0 +1,104 @@
+openapi: 3.1.0
+info:
+  title: The Volumn API
+  version: 0.1.0
+servers:
+  - url: http://localhost:3000
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    ErrorEnvelope:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            details:
+              type: object
+              additionalProperties: true
+paths:
+  /health:
+    get:
+      summary: Health check
+      responses:
+        "200":
+          description: Service status
+  /auth/register:
+    post:
+      summary: Register a new user
+      responses:
+        "201":
+          description: Session created
+  /auth/login:
+    post:
+      summary: Login
+      responses:
+        "200":
+          description: Session created
+  /auth/refresh:
+    post:
+      summary: Rotate refresh token and access token
+      responses:
+        "200":
+          description: Session refreshed
+  /auth/logout:
+    post:
+      summary: Logout current session
+      responses:
+        "204":
+          description: Logged out
+  /users/me:
+    get:
+      summary: Get current user
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Current user profile
+    patch:
+      summary: Update current user
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Updated user profile
+  /workout-plans:
+    get:
+      summary: List workout plans
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Paginated workout plans
+    post:
+      summary: Create workout plan
+      security:
+        - bearerAuth: []
+      responses:
+        "201":
+          description: Workout plan created
+  /sessions:
+    get:
+      summary: List workout sessions
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Paginated session list
+    post:
+      summary: Start workout session
+      security:
+        - bearerAuth: []
+      responses:
+        "201":
+          description: Session started

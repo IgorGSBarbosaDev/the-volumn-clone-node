@@ -1,0 +1,21 @@
+:root {
+  --font-sans: Inter, "Segoe UI", sans-serif;
+  --color-page-bg: #fff5f9;
+  --color-surface: #fff9fc;
+  --color-surface-soft: #fff0f9;
+  --color-text: #4a1942;
+  --color-text-soft: #a21caf;
+  --color-text-muted: rgba(162, 28, 175, 0.6);
+  --color-border: #f0abfc;
+  --color-border-strong: rgba(240, 171, 252, 0.72);
+  --color-button-text: #ffffff;
+  --color-divider: #efb3f8;
+  --color-gradient-start: #ec4899;
+  --color-gradient-end: #c026d3;
+  --color-shadow: rgba(192, 38, 211, 0.25);
+  --shadow-soft: 0 18px 40px rgba(106, 28, 95, 0.08);
+  --shadow-cta: 0 4px 16px var(--color-shadow);
+  --radius-input: 16px;
+  --radius-pill: 999px;
+}
+

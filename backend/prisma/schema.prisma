@@ -18,6 +18,15 @@ enum ThemePreference {
   black
 }
 
+enum PlanAccent {
+  rose
+  green
+  black
+  blue
+  amber
+  violet
+}
+
 enum MuscleGroup {
   CHEST
   BACK
@@ -98,7 +107,7 @@ model WorkoutPlan {
   id          String         @id @default(uuid()) @db.Uuid
   ownerUserId String         @db.Uuid
   name        String
-  accent      String?
+  accent      PlanAccent?
   focusLabel  String?
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
@@ -107,6 +116,7 @@ model WorkoutPlan {
   sessions    WorkoutSession[]
 
   @@index([ownerUserId])
+  @@index([ownerUserId, updatedAt])
 }
 
 model PlanExercise {

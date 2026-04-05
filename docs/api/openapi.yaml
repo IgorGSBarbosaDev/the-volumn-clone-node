@@ -126,18 +126,348 @@ paths:
   /workout-plans:
     get:
       summary: List workout plans
+      description: Returns the authenticated user's workout plans ordered by most recently updated first.
       security:
         - bearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - in: query
+          name: pageSize
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
       responses:
         "200":
           description: Paginated workout plans
+        "401":
+          description: Missing, invalid, or expired access token
     post:
       summary: Create workout plan
+      description: Creates an owned workout plan. Student users may create at most five plans.
       security:
         - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 80
+                accent:
+                  type: string
+                  nullable: true
+                  enum: [rose, green, black, blue, amber, violet]
+                focusLabel:
+                  type: string
+                  nullable: true
+                  maxLength: 80
       responses:
         "201":
-          description: Workout plan created
+          description: Workout plan detail
+        "400":
+          description: Invalid workout plan payload
+        "401":
+          description: Missing, invalid, or expired access token
+        "403":
+          description: Student plan cap reached
+  /workout-plans/{id}:
+    get:
+      summary: Get workout plan detail
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Workout plan detail with ordered plan exercises and sets
+        "401":
+          description: Missing, invalid, or expired access token
+        "404":
+          description: Workout plan not found
+    patch:
+      summary: Update workout plan metadata
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              minProperties: 1
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 80
+                accent:
+                  type: string
+                  nullable: true
+                  enum: [rose, green, black, blue, amber, violet]
+                focusLabel:
+                  type: string
+                  nullable: true
+                  maxLength: 80
+      responses:
+        "200":
+          description: Updated workout plan detail
+        "400":
+          description: Invalid workout plan payload
+        "401":
+          description: Missing, invalid, or expired access token
+        "404":
+          description: Workout plan not found
+    delete:
+      summary: Delete workout plan
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Workout plan deleted
+        "401":
+          description: Missing, invalid, or expired access token
+        "404":
+          description: Workout plan not found
+  /workout-plans/{id}/exercises:
+    post:
+      summary: Add exercise to workout plan
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [exerciseId]
+              properties:
+                exerciseId:
+                  type: string
+                  format: uuid
+      responses:
+        "201":
+          description: Updated workout plan detail after appending the exercise
+        "400":
+          description: Invalid request payload
+        "401":
+          description: Missing, invalid, or expired access token
+        "404":
+          description: Workout plan or exercise not found
+  /workout-plans/{planId}/exercises/{planExerciseId}:
+    delete:
+      summary: Remove plan exercise
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: planId
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - in: path
+          name: planExerciseId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Plan exercise removed
+        "401":
+          description: Missing, invalid, or expired access token
+        "404":
+          description: Workout plan or plan exercise not found
+  /workout-plans/{planId}/exercises/reorder:
+    patch:
+      summary: Reorder plan exercises
+      description: Reorders all plan exercises atomically. The payload must include the full exact current set of plan exercise IDs.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: planId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [orderedPlanExerciseIds]
+              properties:
+                orderedPlanExerciseIds:
+                  type: array
+                  minItems: 1
+                  items:
+                    type: string
+                    format: uuid
+      responses:
+        "200":
+          description: Updated workout plan detail with normalized exercise ordering
+        "400":
+          description: Invalid reorder payload
+        "401":
+          description: Missing, invalid, or expired access token
+        "404":
+          description: Workout plan not found
+  /workout-plans/{planId}/exercises/{planExerciseId}/sets:
+    post:
+      summary: Add plan set
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: planId
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - in: path
+          name: planExerciseId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [setType]
+              properties:
+                setType:
+                  type: string
+                  enum: [WARM_UP, FEEDER, NORMAL, FAILURE, DROP_SET]
+                targetReps:
+                  type: integer
+                  nullable: true
+                  minimum: 1
+                  maximum: 100
+                targetLoadKg:
+                  type: number
+                  nullable: true
+                  minimum: 0
+                  maximum: 1000
+                notes:
+                  type: string
+                  nullable: true
+                  maxLength: 500
+      responses:
+        "201":
+          description: Updated workout plan detail after appending the plan set
+        "400":
+          description: Invalid plan set payload
+        "401":
+          description: Missing, invalid, or expired access token
+        "404":
+          description: Workout plan or plan exercise not found
+  /plan-sets/{setId}:
+    patch:
+      summary: Update plan set
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: setId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              minProperties: 1
+              properties:
+                setType:
+                  type: string
+                  enum: [WARM_UP, FEEDER, NORMAL, FAILURE, DROP_SET]
+                targetReps:
+                  type: integer
+                  nullable: true
+                  minimum: 1
+                  maximum: 100
+                targetLoadKg:
+                  type: number
+                  nullable: true
+                  minimum: 0
+                  maximum: 1000
+                notes:
+                  type: string
+                  nullable: true
+                  maxLength: 500
+      responses:
+        "200":
+          description: Updated plan set
+        "400":
+          description: Invalid plan set payload
+        "401":
+          description: Missing, invalid, or expired access token
+        "404":
+          description: Plan set not found
+    delete:
+      summary: Delete plan set
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: setId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Plan set deleted
+        "401":
+          description: Missing, invalid, or expired access token
+        "404":
+          description: Plan set not found
   /sessions:
     get:
       summary: List workout sessions

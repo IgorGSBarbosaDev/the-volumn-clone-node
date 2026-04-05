@@ -8,61 +8,83 @@ import {
   updateWorkoutPlanRequestSchema,
 } from '@the-volumn/shared'
 import { Router } from 'express'
+import {
+  addOwnedPlanExercise,
+  createOwnedPlanSet,
+  createOwnedWorkoutPlan,
+  deleteOwnedPlanSet,
+  deleteOwnedWorkoutPlan,
+  getOwnedWorkoutPlanDetail,
+  listWorkoutPlans,
+  removeOwnedPlanExercise,
+  reorderOwnedPlanExercises,
+  updateOwnedPlanSet,
+  updateOwnedWorkoutPlan,
+} from '../application/workout-plans.service.js'
+import { getAuthContext } from '../../../shared/http/auth-context.js'
 import { parseBody, parseQuery } from '../../../shared/http/validate.js'
-import { notImplemented } from '../../../shared/lib/not-implemented.js'
 
 export function createWorkoutPlansRouter() {
   const router = Router()
 
-  router.get('/', (request, response) => {
-    parseQuery(request, paginationQuerySchema)
-    notImplemented('Workout plans list')
-    return response
+  router.get('/', async (request, response) => {
+    const auth = getAuthContext(request)
+    const query = parseQuery(request, paginationQuerySchema)
+    const result = await listWorkoutPlans(auth.userId, query)
+    return response.status(200).json(result)
   })
 
-  router.post('/', (request, response) => {
-    parseBody(request, createWorkoutPlanRequestSchema)
-    notImplemented('Workout plans create')
-    return response
+  router.post('/', async (request, response) => {
+    const auth = getAuthContext(request)
+    const payload = parseBody(request, createWorkoutPlanRequestSchema)
+    const result = await createOwnedWorkoutPlan(auth.userId, payload)
+    return response.status(201).json(result)
   })
 
-  router.get('/:id', (_request, response) => {
-    notImplemented('Workout plans detail')
-    return response
+  router.get('/:id', async (request, response) => {
+    const auth = getAuthContext(request)
+    const result = await getOwnedWorkoutPlanDetail(auth.userId, request.params.id)
+    return response.status(200).json(result)
   })
 
-  router.patch('/:id', (request, response) => {
-    parseBody(request, updateWorkoutPlanRequestSchema)
-    notImplemented('Workout plans update')
-    return response
+  router.patch('/:id', async (request, response) => {
+    const auth = getAuthContext(request)
+    const payload = parseBody(request, updateWorkoutPlanRequestSchema)
+    const result = await updateOwnedWorkoutPlan(auth.userId, request.params.id, payload)
+    return response.status(200).json(result)
   })
 
-  router.delete('/:id', (_request, response) => {
-    notImplemented('Workout plans delete')
-    return response
+  router.delete('/:id', async (request, response) => {
+    const auth = getAuthContext(request)
+    await deleteOwnedWorkoutPlan(auth.userId, request.params.id)
+    return response.status(204).send()
   })
 
-  router.post('/:id/exercises', (request, response) => {
-    parseBody(request, addPlanExerciseRequestSchema)
-    notImplemented('Workout plans add exercise')
-    return response
+  router.post('/:id/exercises', async (request, response) => {
+    const auth = getAuthContext(request)
+    const payload = parseBody(request, addPlanExerciseRequestSchema)
+    const result = await addOwnedPlanExercise(auth.userId, request.params.id, payload)
+    return response.status(201).json(result)
   })
 
-  router.delete('/:planId/exercises/:planExerciseId', (_request, response) => {
-    notImplemented('Workout plans remove exercise')
-    return response
+  router.delete('/:planId/exercises/:planExerciseId', async (request, response) => {
+    const auth = getAuthContext(request)
+    await removeOwnedPlanExercise(auth.userId, request.params.planId, request.params.planExerciseId)
+    return response.status(204).send()
   })
 
-  router.patch('/:planId/exercises/reorder', (request, response) => {
-    parseBody(request, reorderPlanExercisesRequestSchema)
-    notImplemented('Workout plans reorder exercises')
-    return response
+  router.patch('/:planId/exercises/reorder', async (request, response) => {
+    const auth = getAuthContext(request)
+    const payload = parseBody(request, reorderPlanExercisesRequestSchema)
+    const result = await reorderOwnedPlanExercises(auth.userId, request.params.planId, payload.orderedPlanExerciseIds)
+    return response.status(200).json(result)
   })
 
-  router.post('/:planId/exercises/:planExerciseId/sets', (request, response) => {
-    parseBody(request, createPlanSetRequestSchema)
-    notImplemented('Workout plans create plan set')
-    return response
+  router.post('/:planId/exercises/:planExerciseId/sets', async (request, response) => {
+    const auth = getAuthContext(request)
+    const payload = parseBody(request, createPlanSetRequestSchema)
+    const result = await createOwnedPlanSet(auth.userId, request.params.planId, request.params.planExerciseId, payload)
+    return response.status(201).json(result)
   })
 
   return router
@@ -71,15 +93,17 @@ export function createWorkoutPlansRouter() {
 export function createPlanSetsRouter() {
   const router = Router()
 
-  router.patch('/:setId', (request, response) => {
-    parseBody(request, updatePlanSetRequestSchema)
-    notImplemented('Plan sets update')
-    return response
+  router.patch('/:setId', async (request, response) => {
+    const auth = getAuthContext(request)
+    const payload = parseBody(request, updatePlanSetRequestSchema)
+    const result = await updateOwnedPlanSet(auth.userId, request.params.setId, payload)
+    return response.status(200).json(result)
   })
 
-  router.delete('/:setId', (_request, response) => {
-    notImplemented('Plan sets delete')
-    return response
+  router.delete('/:setId', async (request, response) => {
+    const auth = getAuthContext(request)
+    await deleteOwnedPlanSet(auth.userId, request.params.setId)
+    return response.status(204).send()
   })
 
   return router

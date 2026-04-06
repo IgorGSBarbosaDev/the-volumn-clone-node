@@ -516,57 +516,43 @@ paths:
           description: Service status
   /auth/register:
     post:
-      summary: Register a new user and create a session
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/RegisterRequest"
+      summary: Register a new user
+      description: Creates the user, returns an access token session payload, and sets a rotating refresh token cookie.
       responses:
         "201":
           description: Session created
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/AuthSession"
+        "409":
+          description: Email already in use
+        "429":
+          description: Auth rate limit exceeded
   /auth/login:
     post:
-      summary: Login and create a session
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/LoginRequest"
+      summary: Login
+      description: Verifies credentials, returns an access token session payload, and sets a rotating refresh token cookie.
       responses:
         "200":
           description: Session created
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/AuthSession"
+        "401":
+          description: Invalid credentials
+        "429":
+          description: Auth rate limit exceeded
   /auth/refresh:
     post:
-      summary: Refresh the access token using the refresh cookie
+      summary: Rotate refresh token and access token
+      description: Uses the refresh token cookie to issue a fresh access token and a new refresh token cookie.
       security:
         - refreshCookieAuth: []
       responses:
         "200":
           description: Session refreshed
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/AuthSession"
         "401":
-          description: Invalid refresh token
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorEnvelope"
+          description: Missing, invalid, expired, or revoked refresh token
+        "429":
+          description: Auth rate limit exceeded
   /auth/logout:
     post:
-      summary: Logout the current refresh-token session
+      summary: Logout current session
+      description: Invalidates the current refresh token session and clears the refresh token cookie.
       security:
         - refreshCookieAuth: []
       responses:
@@ -574,18 +560,20 @@ paths:
           description: Logged out
   /users/me:
     get:
-      summary: Get the current user
+      summary: Get current user
+      description: Returns the authenticated user's current profile summary for app bootstrap and profile rendering.
       security:
         - bearerAuth: []
       responses:
         "200":
-          description: Current user
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/UserSummary"
+          description: Current user profile
+        "401":
+          description: Missing, invalid, or expired access token
+        "404":
+          description: Authenticated user record was not found
     patch:
-      summary: Update the current user's display name or theme
+      summary: Update current user
+      description: Updates the authenticated user's self-service profile fields in V0.1. Only `displayName` and `theme` are editable.
       security:
         - bearerAuth: []
       requestBody:
@@ -593,29 +581,29 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/UpdateCurrentUserRequest"
+              type: object
+              minProperties: 1
+              properties:
+                displayName:
+                  type: string
+                  minLength: 2
+                  maxLength: 80
+                theme:
+                  type: string
+                  enum: [rose, green, black]
       responses:
         "200":
-          description: Updated current user
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/UserSummary"
-  /users/me/stats:
-    get:
-      summary: Get profile stats for the current user
-      security:
-        - bearerAuth: []
-      responses:
-        "200":
-          description: Current user profile stats
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/CurrentUserStats"
+          description: Updated user profile
+        "400":
+          description: Invalid profile update payload
+        "401":
+          description: Missing, invalid, or expired access token
+        "404":
+          description: Authenticated user record was not found
   /workout-plans:
     get:
-      summary: List workout plans owned by the current user
+      summary: List workout plans
+      description: Returns the authenticated user's workout plans ordered by most recently updated first.
       security:
         - bearerAuth: []
       parameters:
@@ -623,22 +611,23 @@ paths:
           name: page
           schema:
             type: integer
+            minimum: 1
             default: 1
         - in: query
           name: pageSize
           schema:
             type: integer
-            default: 20
+            minimum: 1
             maximum: 100
+            default: 20
       responses:
         "200":
-          description: Paginated workout plan summaries
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/WorkoutPlanListResponse"
+          description: Paginated workout plans
+        "401":
+          description: Missing, invalid, or expired access token
     post:
-      summary: Create a workout plan
+      summary: Create workout plan
+      description: Creates an owned workout plan. Student users may create at most five plans.
       security:
         - bearerAuth: []
       requestBody:
@@ -646,14 +635,30 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CreateWorkoutPlanRequest"
+              type: object
+              required: [name]
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 80
+                accent:
+                  type: string
+                  nullable: true
+                  enum: [rose, green, black, blue, amber, violet]
+                focusLabel:
+                  type: string
+                  nullable: true
+                  maxLength: 80
       responses:
         "201":
-          description: Workout plan created
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/WorkoutPlanDetail"
+          description: Workout plan detail
+        "400":
+          description: Invalid workout plan payload
+        "401":
+          description: Missing, invalid, or expired access token
+        "403":
+          description: Student plan cap reached
   /workout-plans/{id}:
     get:
       summary: Get workout plan detail
@@ -668,11 +673,11 @@ paths:
             format: uuid
       responses:
         "200":
-          description: Workout plan detail
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/WorkoutPlanDetail"
+          description: Workout plan detail with ordered plan exercises and sets
+        "401":
+          description: Missing, invalid, or expired access token
+        "404":
+          description: Workout plan not found
     patch:
       summary: Update workout plan metadata
       security:
@@ -689,16 +694,33 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/UpdateWorkoutPlanRequest"
+              type: object
+              minProperties: 1
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 80
+                accent:
+                  type: string
+                  nullable: true
+                  enum: [rose, green, black, blue, amber, violet]
+                focusLabel:
+                  type: string
+                  nullable: true
+                  maxLength: 80
       responses:
         "200":
           description: Updated workout plan detail
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/WorkoutPlanDetail"
+        "400":
+          description: Invalid workout plan payload
+        "401":
+          description: Missing, invalid, or expired access token
+        "404":
+          description: Workout plan not found
     delete:
-      summary: Delete a workout plan
+      summary: Delete workout plan
+      description: Deletes an owned workout plan only when it has not been used to record workout sessions. Historical session provenance is preserved.
       security:
         - bearerAuth: []
       parameters:
@@ -711,9 +733,15 @@ paths:
       responses:
         "204":
           description: Workout plan deleted
+        "401":
+          description: Missing, invalid, or expired access token
+        "404":
+          description: Workout plan not found
+        "409":
+          description: Workout plan is referenced by recorded workout sessions
   /workout-plans/{id}/exercises:
     post:
-      summary: Add an exercise to a workout plan
+      summary: Add exercise to workout plan
       security:
         - bearerAuth: []
       parameters:
@@ -728,17 +756,24 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/AddPlanExerciseRequest"
+              type: object
+              required: [exerciseId]
+              properties:
+                exerciseId:
+                  type: string
+                  format: uuid
       responses:
         "201":
-          description: Updated workout plan detail
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/WorkoutPlanDetail"
+          description: Updated workout plan detail after appending the exercise
+        "400":
+          description: Invalid request payload
+        "401":
+          description: Missing, invalid, or expired access token
+        "404":
+          description: Workout plan or exercise not found
   /workout-plans/{planId}/exercises/{planExerciseId}:
     delete:
-      summary: Remove an exercise from a workout plan
+      summary: Remove plan exercise
       security:
         - bearerAuth: []
       parameters:
@@ -756,10 +791,15 @@ paths:
             format: uuid
       responses:
         "204":
-          description: Exercise removed
+          description: Plan exercise removed
+        "401":
+          description: Missing, invalid, or expired access token
+        "404":
+          description: Workout plan or plan exercise not found
   /workout-plans/{planId}/exercises/reorder:
     patch:
-      summary: Atomically reorder plan exercises
+      summary: Reorder plan exercises
+      description: Reorders all plan exercises atomically. The payload must include the full exact current set of plan exercise IDs.
       security:
         - bearerAuth: []
       parameters:
@@ -774,17 +814,27 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ReorderPlanExercisesRequest"
+              type: object
+              required: [orderedPlanExerciseIds]
+              properties:
+                orderedPlanExerciseIds:
+                  type: array
+                  minItems: 1
+                  items:
+                    type: string
+                    format: uuid
       responses:
         "200":
-          description: Updated workout plan detail
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/WorkoutPlanDetail"
+          description: Updated workout plan detail with normalized exercise ordering
+        "400":
+          description: Invalid reorder payload
+        "401":
+          description: Missing, invalid, or expired access token
+        "404":
+          description: Workout plan not found
   /workout-plans/{planId}/exercises/{planExerciseId}/sets:
     post:
-      summary: Add a planned set to a workout plan exercise
+      summary: Add plan set
       security:
         - bearerAuth: []
       parameters:
@@ -805,17 +855,38 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CreatePlanSetRequest"
+              type: object
+              required: [setType]
+              properties:
+                setType:
+                  type: string
+                  enum: [WARM_UP, FEEDER, NORMAL, FAILURE, DROP_SET]
+                targetReps:
+                  type: integer
+                  nullable: true
+                  minimum: 1
+                  maximum: 100
+                targetLoadKg:
+                  type: number
+                  nullable: true
+                  minimum: 0
+                  maximum: 1000
+                notes:
+                  type: string
+                  nullable: true
+                  maxLength: 500
       responses:
         "201":
-          description: Created plan set
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/PlanSet"
+          description: Updated workout plan detail after appending the plan set
+        "400":
+          description: Invalid plan set payload
+        "401":
+          description: Missing, invalid, or expired access token
+        "404":
+          description: Workout plan or plan exercise not found
   /plan-sets/{setId}:
     patch:
-      summary: Update a planned set
+      summary: Update plan set
       security:
         - bearerAuth: []
       parameters:
@@ -830,16 +901,37 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/UpdatePlanSetRequest"
+              type: object
+              minProperties: 1
+              properties:
+                setType:
+                  type: string
+                  enum: [WARM_UP, FEEDER, NORMAL, FAILURE, DROP_SET]
+                targetReps:
+                  type: integer
+                  nullable: true
+                  minimum: 1
+                  maximum: 100
+                targetLoadKg:
+                  type: number
+                  nullable: true
+                  minimum: 0
+                  maximum: 1000
+                notes:
+                  type: string
+                  nullable: true
+                  maxLength: 500
       responses:
         "200":
           description: Updated plan set
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/PlanSet"
+        "400":
+          description: Invalid plan set payload
+        "401":
+          description: Missing, invalid, or expired access token
+        "404":
+          description: Plan set not found
     delete:
-      summary: Delete a planned set
+      summary: Delete plan set
       security:
         - bearerAuth: []
       parameters:
@@ -851,10 +943,15 @@ paths:
             format: uuid
       responses:
         "204":
-          description: Planned set deleted
+          description: Plan set deleted
+        "401":
+          description: Missing, invalid, or expired access token
+        "404":
+          description: Plan set not found
   /exercises:
     get:
-      summary: List accessible default and custom exercises
+      summary: Browse accessible exercises
+      description: Returns the authenticated user's accessible exercise catalog, combining global default exercises with their own custom exercises only. Results are sorted by name ascending.
       security:
         - bearerAuth: []
       parameters:
@@ -862,34 +959,42 @@ paths:
           name: search
           schema:
             type: string
+            maxLength: 120
+          description: Case-insensitive name search across accessible exercises.
         - in: query
           name: muscleGroup
           schema:
-            $ref: "#/components/schemas/MuscleGroup"
+            type: string
+            enum: [CHEST, BACK, SHOULDERS, BICEPS, TRICEPS, QUADS, HAMSTRINGS, GLUTES, CALVES, CORE, FULL_BODY, OTHER]
         - in: query
           name: source
           schema:
-            $ref: "#/components/schemas/ExerciseSource"
+            type: string
+            enum: [DEFAULT, CUSTOM]
+          description: When omitted, returns both default and owned custom exercises.
         - in: query
           name: page
           schema:
             type: integer
+            minimum: 1
             default: 1
         - in: query
           name: pageSize
           schema:
             type: integer
-            default: 20
+            minimum: 1
             maximum: 100
+            default: 20
       responses:
         "200":
-          description: Paginated exercise list
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ExercisesListResponse"
+          description: Paginated accessible exercise catalog
+        "400":
+          description: Invalid exercise query parameters
+        "401":
+          description: Missing, invalid, or expired access token
     post:
-      summary: Create a custom exercise
+      summary: Create custom exercise
+      description: Creates a custom exercise owned by the authenticated user. Names are trimmed before validation and persistence.
       security:
         - bearerAuth: []
       requestBody:
@@ -897,17 +1002,27 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CreateExerciseRequest"
+              type: object
+              required: [name, muscleGroup]
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 120
+                muscleGroup:
+                  type: string
+                  enum: [CHEST, BACK, SHOULDERS, BICEPS, TRICEPS, QUADS, HAMSTRINGS, GLUTES, CALVES, CORE, FULL_BODY, OTHER]
       responses:
         "201":
-          description: Created exercise
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Exercise"
+          description: Created custom exercise
+        "400":
+          description: Invalid custom exercise payload
+        "401":
+          description: Missing, invalid, or expired access token
   /exercises/{id}/history:
     get:
-      summary: Get exercise history for the current user
+      summary: Get accessible exercise history
+      description: Returns work-set-only history for an accessible exercise using completed sessions owned by the authenticated user. Warm-up and feeder sets are excluded.
       security:
         - bearerAuth: []
       parameters:
@@ -921,23 +1036,28 @@ paths:
           name: page
           schema:
             type: integer
+            minimum: 1
             default: 1
         - in: query
           name: pageSize
           schema:
             type: integer
-            default: 20
+            minimum: 1
             maximum: 100
+            default: 20
       responses:
         "200":
-          description: Exercise history
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ExerciseHistoryResponse"
+          description: Paginated exercise history for the authenticated user
+        "400":
+          description: Invalid pagination parameters
+        "401":
+          description: Missing, invalid, or expired access token
+        "404":
+          description: Exercise not found or not accessible to the current user
   /sessions:
     get:
-      summary: List sessions for the current user
+      summary: List workout sessions
+      description: Returns the authenticated user's workout sessions ordered by most recent start time. Summaries include session status, source plan name, and total performed-set count.
       security:
         - bearerAuth: []
       parameters:
@@ -945,22 +1065,25 @@ paths:
           name: page
           schema:
             type: integer
+            minimum: 1
             default: 1
         - in: query
           name: pageSize
           schema:
             type: integer
-            default: 20
+            minimum: 1
             maximum: 100
+            default: 20
       responses:
         "200":
           description: Paginated session list
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/SessionsListResponse"
+        "400":
+          description: Invalid pagination parameters
+        "401":
+          description: Missing, invalid, or expired access token
     post:
-      summary: Start a workout session from a workout plan
+      summary: Start workout session
+      description: Starts an active workout session from an owned workout plan, snapshots the plan structure, and rejects creation when another active session already exists.
       security:
         - bearerAuth: []
       requestBody:
@@ -968,35 +1091,38 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/StartSessionRequest"
+              type: object
+              required: [workoutPlanId]
+              properties:
+                workoutPlanId:
+                  type: string
+                  format: uuid
       responses:
         "201":
-          description: Session started
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/WorkoutSessionDetail"
+          description: Session started with plan snapshot and empty performed-set list
+        "400":
+          description: Invalid session-start payload
+        "401":
+          description: Missing, invalid, or expired access token
+        "404":
+          description: Workout plan not found
+        "409":
+          description: Another active workout session already exists for the current user
   /sessions/active:
     get:
-      summary: Get the active session for the current user
+      summary: Get active workout session
+      description: Returns the authenticated user's current active session detail, or `null` when no active session exists.
       security:
         - bearerAuth: []
       responses:
         "200":
-          description: Active session detail
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/WorkoutSessionDetail"
-        "404":
-          description: No active session
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorEnvelope"
+          description: Active session detail or `null`
+        "401":
+          description: Missing, invalid, or expired access token
   /sessions/{id}:
     get:
-      summary: Get a session by id
+      summary: Get workout session detail
+      description: Returns a full owned workout-session detail payload including the snapped source plan and ordered performed sets.
       security:
         - bearerAuth: []
       parameters:
@@ -1008,14 +1134,15 @@ paths:
             format: uuid
       responses:
         "200":
-          description: Session detail
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/WorkoutSessionDetail"
+          description: Workout session detail
+        "401":
+          description: Missing, invalid, or expired access token
+        "404":
+          description: Workout session not found
   /sessions/{id}/sets:
     post:
-      summary: Log a performed set in an active session
+      summary: Append performed set to active session
+      description: Appends a performed set to an owned active session, evaluates PR eligibility at write time, and rejects exercises outside the session's snapped plan structure.
       security:
         - bearerAuth: []
       parameters:
@@ -1030,17 +1157,42 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CreateSessionSetRequest"
+              type: object
+              required: [exerciseId, setType, weightKg, reps]
+              properties:
+                exerciseId:
+                  type: string
+                  format: uuid
+                setType:
+                  type: string
+                  enum: [WARM_UP, FEEDER, NORMAL, FAILURE, DROP_SET]
+                weightKg:
+                  type: number
+                  minimum: 0
+                  maximum: 1000
+                reps:
+                  type: integer
+                  minimum: 1
+                  maximum: 100
+                notes:
+                  type: string
+                  nullable: true
+                  maxLength: 500
       responses:
         "201":
-          description: Created performed set
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/SessionSet"
+          description: Created performed set with stored `isPR` flag
+        "400":
+          description: Invalid set payload or exercise is not part of the session plan snapshot
+        "401":
+          description: Missing, invalid, or expired access token
+        "404":
+          description: Workout session not found
+        "409":
+          description: Workout session is no longer active
   /sessions/{id}/complete:
     patch:
-      summary: Complete an active session
+      summary: Complete workout session
+      description: Completes an owned active session, persists `completedAt` and `durationSeconds`, and returns the finalized immutable session detail.
       security:
         - bearerAuth: []
       parameters:
@@ -1055,11 +1207,19 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CompleteSessionRequest"
+              type: object
+              properties:
+                completedAt:
+                  type: string
+                  format: date-time
       responses:
         "200":
-          description: Completed session detail
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/WorkoutSessionDetail"
+          description: Completed workout session detail
+        "400":
+          description: Invalid completion payload or completion time before session start
+        "401":
+          description: Missing, invalid, or expired access token
+        "404":
+          description: Workout session not found
+        "409":
+          description: Workout session is no longer active

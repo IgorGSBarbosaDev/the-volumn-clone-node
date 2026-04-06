@@ -1,6 +1,6 @@
-import { createHash, randomUUID } from 'crypto'
-import jwt from 'jsonwebtoken'
+import { randomUUID, createHash } from 'crypto'
 import type { UserRole } from '@the-volumn/shared'
+import jwt, { JsonWebTokenError, TokenExpiredError } from 'jsonwebtoken'
 import { env } from '../../../config/env.js'
 import type { AuthContext } from '../../../shared/http/auth-context.js'
 import { ApiError } from '../../../shared/http/api-error.js'
@@ -10,14 +10,24 @@ type TokenUser = {
   role: UserRole
 }
 
-const { JsonWebTokenError, TokenExpiredError } = jwt
-
 export type IssuedAuthTokens = {
   accessToken: string
   accessTokenExpiresAt: Date
   refreshToken: string
   refreshTokenExpiresAt: Date
   refreshTokenId: string
+}
+
+type AccessTokenPayload = {
+  role: UserRole
+  sub: string
+  type: 'access'
+}
+
+type RefreshTokenPayload = {
+  sid: string
+  sub: string
+  type: 'refresh'
 }
 
 export function hashRefreshToken(refreshToken: string) {
@@ -68,12 +78,7 @@ export function verifyAccessToken(accessToken: string): AuthContext {
   try {
     const payload = jwt.verify(accessToken, env.JWT_ACCESS_SECRET)
 
-    if (
-      typeof payload !== 'object' ||
-      payload.type !== 'access' ||
-      typeof payload.sub !== 'string' ||
-      !isUserRole(payload.role)
-    ) {
+    if (typeof payload !== 'object' || payload.type !== 'access' || typeof payload.sub !== 'string' || !isUserRole(payload.role)) {
       throw new ApiError(401, 'INVALID_ACCESS_TOKEN', 'Access token is invalid')
     }
 

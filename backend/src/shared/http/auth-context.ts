@@ -1,5 +1,5 @@
-import type { UserRole } from '@the-volumn/shared'
 import type { Request } from 'express'
+import type { UserRole } from '@the-volumn/shared'
 import { ApiError } from './api-error.js'
 
 export type AuthContext = {

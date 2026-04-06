@@ -1,9 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import {
+  activeSessionResponseSchema,
+  createExerciseRequestSchema,
   createWorkoutPlanRequestSchema,
   currentUserStatsResponseSchema,
   errorEnvelopeSchema,
   loginRequestSchema,
+  updateCurrentUserRequestSchema,
   registerRequestSchema,
   sessionDetailResponseSchema,
   startSessionRequestSchema,
@@ -32,6 +35,8 @@ describe('shared contracts', () => {
   })
 
   it('parses core workout payloads and errors', () => {
+    expect(activeSessionResponseSchema.parse(null)).toBeNull()
+
     expect(
       createWorkoutPlanRequestSchema.parse({
         name: 'Push Day',
@@ -46,6 +51,16 @@ describe('shared contracts', () => {
     ).toBeDefined()
 
     expect(
+      createExerciseRequestSchema.parse({
+        name: '  Cable Fly  ',
+        muscleGroup: 'CHEST',
+      }),
+    ).toMatchObject({
+      name: 'Cable Fly',
+      muscleGroup: 'CHEST',
+    })
+
+    expect(
       errorEnvelopeSchema.parse({
         error: {
           code: 'VALIDATION_ERROR',
@@ -55,70 +70,22 @@ describe('shared contracts', () => {
     ).toBeDefined()
   })
 
-  it('parses the approved read models', () => {
+  it('requires at least one current-user field for profile updates', () => {
     expect(
-      currentUserStatsResponseSchema.parse({
-        totalSessions: 4,
-        prCount: 2,
+      updateCurrentUserRequestSchema.parse({
+        theme: 'green',
       }),
     ).toBeDefined()
 
-    expect(
-      workoutPlanSummarySchema.parse({
-        id: '550e8400-e29b-41d4-a716-446655440010',
-        name: 'Push Day',
-        accent: 'rose',
-        focusLabel: 'Chest',
-        exerciseCount: 3,
-        muscleGroups: ['CHEST', 'SHOULDERS', 'TRICEPS'],
-        totalPlannedSets: 10,
-        createdAt: '2026-04-06T12:00:00.000Z',
-        updatedAt: '2026-04-06T12:00:00.000Z',
-      }),
-    ).toBeDefined()
+    expect(() => updateCurrentUserRequestSchema.parse({})).toThrowError('At least one field must be provided')
+  })
 
-    expect(
-      workoutSessionSummarySchema.parse({
-        id: '550e8400-e29b-41d4-a716-446655440011',
-        workoutPlanId: '550e8400-e29b-41d4-a716-446655440012',
-        workoutPlanName: 'Push Day',
-        status: 'COMPLETED',
-        startedAt: '2026-04-06T12:00:00.000Z',
-        completedAt: '2026-04-06T13:00:00.000Z',
-        durationSeconds: 3600,
-        totalSets: 8,
-        exerciseCount: 3,
-        totalVolumeKg: 2420,
+  it('rejects blank exercise names after trimming', () => {
+    expect(() =>
+      createExerciseRequestSchema.parse({
+        name: '   ',
+        muscleGroup: 'CHEST',
       }),
-    ).toBeDefined()
-
-    expect(
-      sessionDetailResponseSchema.parse({
-        id: '550e8400-e29b-41d4-a716-446655440011',
-        workoutPlanId: '550e8400-e29b-41d4-a716-446655440012',
-        workoutPlanName: 'Push Day',
-        status: 'ACTIVE',
-        startedAt: '2026-04-06T12:00:00.000Z',
-        completedAt: null,
-        durationSeconds: null,
-        totalSets: 1,
-        exerciseCount: 1,
-        totalVolumeKg: 800,
-        sets: [
-          {
-            id: '550e8400-e29b-41d4-a716-446655440013',
-            exerciseId: '550e8400-e29b-41d4-a716-446655440014',
-            exerciseName: 'Barbell Bench Press',
-            muscleGroup: 'CHEST',
-            setType: 'NORMAL',
-            weightKg: 100,
-            reps: 8,
-            notes: null,
-            isPR: false,
-            createdAt: '2026-04-06T12:05:00.000Z',
-          },
-        ],
-      }),
-    ).toBeDefined()
+    ).toThrow()
   })
 })

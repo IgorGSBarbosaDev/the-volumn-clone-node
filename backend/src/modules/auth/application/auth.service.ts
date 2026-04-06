@@ -4,8 +4,8 @@ import { randomUUID } from 'crypto'
 import { db } from '../../../config/db.js'
 import { ApiError } from '../../../shared/http/api-error.js'
 import { mapUserSummary } from '../../../shared/lib/user-summary.js'
-import { issueAuthTokens, hashRefreshToken, verifyRefreshToken } from '../infrastructure/auth-tokens.js'
 import { hashPassword, verifyPassword } from '../infrastructure/password-hasher.js'
+import { hashRefreshToken, issueAuthTokens, verifyRefreshToken } from '../infrastructure/auth-tokens.js'
 
 type AuthUserRecord = {
   createdAt: Date

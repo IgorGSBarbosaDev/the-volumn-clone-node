@@ -1,10 +1,10 @@
 import { loginRequestSchema, registerRequestSchema } from '@the-volumn/shared'
 import { Router } from 'express'
 import { register, login, logout, refresh } from '../application/auth.service.js'
-import { REFRESH_TOKEN_COOKIE_NAME } from '../domain/auth.constants.js'
 import { parseBody } from '../../../shared/http/validate.js'
 import { createAuthRateLimit } from './auth-rate-limit.js'
 import { clearRefreshTokenCookie, setRefreshTokenCookie } from './refresh-token-cookie.js'
+import { REFRESH_TOKEN_COOKIE_NAME } from '../domain/auth.constants.js'
 
 export function createAuthRouter() {
   const router = Router()

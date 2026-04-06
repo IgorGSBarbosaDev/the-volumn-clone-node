@@ -6,8 +6,10 @@ import {
   setTypeSchema,
   uuidSchema,
 } from './common.js'
+import { workoutPlanDetailSchema } from './workout-plans.js'
 
 export const sessionStatusSchema = z.enum(['ACTIVE', 'COMPLETED'])
+export const sessionPlanSnapshotSchema = workoutPlanDetailSchema
 
 export const sessionSetSchema = z.object({
   id: uuidSchema,
@@ -36,12 +38,11 @@ export const workoutSessionSummarySchema = z.object({
 })
 
 export const workoutSessionDetailSchema = workoutSessionSummarySchema.extend({
+  planSnapshot: sessionPlanSnapshotSchema,
   sets: z.array(sessionSetSchema),
 })
 
-export const sessionDetailResponseSchema = workoutSessionDetailSchema
-
-export const activeSessionResponseSchema = workoutSessionDetailSchema
+export const activeSessionResponseSchema = workoutSessionDetailSchema.nullable()
 
 export const startSessionRequestSchema = z.object({
   workoutPlanId: uuidSchema,
@@ -65,10 +66,10 @@ export const sessionsListResponseSchema = z.object({
 })
 
 export type SessionStatus = z.infer<typeof sessionStatusSchema>
+export type SessionPlanSnapshot = z.infer<typeof sessionPlanSnapshotSchema>
 export type SessionSet = z.infer<typeof sessionSetSchema>
 export type WorkoutSessionSummary = z.infer<typeof workoutSessionSummarySchema>
 export type WorkoutSessionDetail = z.infer<typeof workoutSessionDetailSchema>
-export type SessionDetailResponse = z.infer<typeof sessionDetailResponseSchema>
 export type ActiveSessionResponse = z.infer<typeof activeSessionResponseSchema>
 export type StartSessionRequest = z.infer<typeof startSessionRequestSchema>
 export type CreateSessionSetRequest = z.infer<typeof createSessionSetRequestSchema>

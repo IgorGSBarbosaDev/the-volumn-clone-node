@@ -1,6 +1,6 @@
-ALTER TABLE "WorkoutSession"
-ADD COLUMN "planSnapshot" JSONB NOT NULL DEFAULT '{}'::jsonb;
-
-CREATE UNIQUE INDEX "WorkoutSession_one_active_per_user"
-ON "WorkoutSession" ("ownerUserId")
-WHERE "status" = 'ACTIVE';
+-- No-op.
+--
+-- This migration was created before the base schema migration existed and would
+-- fail on a clean database because "WorkoutSession" had not been created yet.
+-- The final persistence shape now lives in the later init migration so a fresh
+-- setup can apply the history safely from scratch.

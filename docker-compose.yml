@@ -4,7 +4,7 @@ services:
     container_name: the-volumn-postgres
     restart: unless-stopped
     ports:
-      - "5432:5432"
+      - "5433:5432"
     environment:
       POSTGRES_DB: the_volumn
       POSTGRES_USER: postgres

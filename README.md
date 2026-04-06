@@ -17,6 +17,8 @@ The Volumn is a responsive workout logging MVP delivered as a monorepo.
 4. Run `npm run db:setup`.
 5. Run `npm run dev`.
 
+The project database uses host port `5433` by default so it does not conflict with an existing local PostgreSQL instance on `5432`.
+
 ## Workspace Commands
 
 - `npm run dev`

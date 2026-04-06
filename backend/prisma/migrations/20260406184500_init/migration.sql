@@ -5,6 +5,9 @@ CREATE TYPE "UserRole" AS ENUM ('STUDENT', 'TRAINER');
 CREATE TYPE "ThemePreference" AS ENUM ('rose', 'green', 'black');
 
 -- CreateEnum
+CREATE TYPE "PlanAccent" AS ENUM ('rose', 'green', 'black', 'blue', 'amber', 'violet');
+
+-- CreateEnum
 CREATE TYPE "MuscleGroup" AS ENUM (
   'CHEST',
   'BACK',
@@ -70,7 +73,7 @@ CREATE TABLE "WorkoutPlan" (
   "id" UUID NOT NULL,
   "ownerUserId" UUID NOT NULL,
   "name" TEXT NOT NULL,
-  "accent" TEXT,
+  "accent" "PlanAccent",
   "focusLabel" TEXT,
   "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
   "updatedAt" TIMESTAMP(3) NOT NULL,
@@ -107,6 +110,7 @@ CREATE TABLE "WorkoutSession" (
   "startedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
   "completedAt" TIMESTAMP(3),
   "durationSeconds" INTEGER,
+  "planSnapshot" JSONB NOT NULL,
   CONSTRAINT "WorkoutSession_pkey" PRIMARY KEY ("id")
 );
 
@@ -143,6 +147,9 @@ CREATE INDEX "Exercise_source_muscleGroup_name_idx" ON "Exercise"("source", "mus
 CREATE INDEX "WorkoutPlan_ownerUserId_idx" ON "WorkoutPlan"("ownerUserId");
 
 -- CreateIndex
+CREATE INDEX "WorkoutPlan_ownerUserId_updatedAt_idx" ON "WorkoutPlan"("ownerUserId", "updatedAt");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "PlanExercise_workoutPlanId_order_key" ON "PlanExercise"("workoutPlanId", "order");
 
 -- CreateIndex
@@ -156,6 +163,9 @@ CREATE INDEX "WorkoutSession_ownerUserId_status_idx" ON "WorkoutSession"("ownerU
 
 -- CreateIndex
 CREATE INDEX "WorkoutSession_workoutPlanId_idx" ON "WorkoutSession"("workoutPlanId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "WorkoutSession_one_active_per_user" ON "WorkoutSession"("ownerUserId") WHERE "status" = 'ACTIVE';
 
 -- CreateIndex
 CREATE INDEX "SessionSet_exerciseId_createdAt_idx" ON "SessionSet"("exerciseId", "createdAt");

@@ -1,6 +1,6 @@
 import { randomUUID, createHash } from 'crypto'
 import type { UserRole } from '@the-volumn/shared'
-import jwt, { JsonWebTokenError, TokenExpiredError } from 'jsonwebtoken'
+import jwt from 'jsonwebtoken'
 import { env } from '../../../config/env.js'
 import type { AuthContext } from '../../../shared/http/auth-context.js'
 import { ApiError } from '../../../shared/http/api-error.js'
@@ -91,7 +91,7 @@ export function verifyAccessToken(accessToken: string): AuthContext {
       throw error
     }
 
-    if (error instanceof TokenExpiredError || error instanceof JsonWebTokenError) {
+    if (isTokenExpiredError(error) || isJsonWebTokenError(error)) {
       throw new ApiError(401, 'INVALID_ACCESS_TOKEN', 'Access token is invalid')
     }
 
@@ -121,11 +121,11 @@ export function verifyRefreshToken(refreshToken: string) {
       throw error
     }
 
-    if (error instanceof TokenExpiredError) {
+    if (isTokenExpiredError(error)) {
       throw new ApiError(401, 'REFRESH_TOKEN_EXPIRED', 'Refresh token has expired')
     }
 
-    if (error instanceof JsonWebTokenError) {
+    if (isJsonWebTokenError(error)) {
       throw new ApiError(401, 'INVALID_REFRESH_TOKEN', 'Refresh token is invalid')
     }
 
@@ -135,4 +135,12 @@ export function verifyRefreshToken(refreshToken: string) {
 
 function isUserRole(value: unknown): value is UserRole {
   return value === 'STUDENT' || value === 'TRAINER'
+}
+
+function isTokenExpiredError(error: unknown) {
+  return error instanceof Error && error.name === 'TokenExpiredError'
+}
+
+function isJsonWebTokenError(error: unknown) {
+  return error instanceof Error && error.name === 'JsonWebTokenError'
 }

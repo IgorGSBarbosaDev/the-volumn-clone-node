@@ -5,6 +5,16 @@ import { ProfilePage } from './profile-page'
 import { renderWithProviders } from '../test/render-with-providers'
 
 const mutateAsync = vi.fn().mockResolvedValue(undefined)
+const mockNavigate = vi.fn()
+
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom')
+
+  return {
+    ...actual,
+    useNavigate: () => mockNavigate,
+  }
+})
 
 vi.mock('../features/auth/use-auth', () => ({
   useAuth: () => ({
@@ -37,13 +47,19 @@ describe('ProfilePage', () => {
   it('renders live profile data and logs out through the mutation', async () => {
     const user = userEvent.setup()
 
-    renderWithProviders(<ProfilePage />)
+    renderWithProviders(<ProfilePage />, '/profile')
 
     expect(screen.getByRole('heading', { name: 'Alex' })).toBeInTheDocument()
-    expect(screen.getByText('Total completed sessions: 12')).toBeInTheDocument()
+    expect(screen.getByLabelText('Profile stats')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: /settings & account/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /account info/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /performance hub/i })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Profile' })).toHaveAttribute('aria-current', 'page')
+    expect(screen.getByText('Total Sessions')).toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: 'Log Out' }))
 
     expect(mutateAsync).toHaveBeenCalled()
+    expect(mockNavigate).toHaveBeenCalledWith('/login', { replace: true })
   })
 })

@@ -30,6 +30,483 @@ components:
             details:
               type: object
               additionalProperties: true
+    PaginationMeta:
+      type: object
+      required: [page, pageSize, total]
+      properties:
+        page:
+          type: integer
+          minimum: 1
+        pageSize:
+          type: integer
+          minimum: 1
+          maximum: 100
+        total:
+          type: integer
+          minimum: 0
+    UserRole:
+      type: string
+      enum: [STUDENT, TRAINER]
+    ThemePreference:
+      type: string
+      enum: [rose, green, black]
+    MuscleGroup:
+      type: string
+      enum: [CHEST, BACK, SHOULDERS, BICEPS, TRICEPS, QUADS, HAMSTRINGS, GLUTES, CALVES, CORE, FULL_BODY, OTHER]
+    PlanAccent:
+      type: string
+      enum: [rose, green, black, blue, amber, violet]
+    SetType:
+      type: string
+      enum: [WARM_UP, FEEDER, NORMAL, FAILURE, DROP_SET]
+    ExerciseSource:
+      type: string
+      enum: [DEFAULT, CUSTOM]
+    SessionStatus:
+      type: string
+      enum: [ACTIVE, COMPLETED]
+    UserSummary:
+      type: object
+      required: [id, email, displayName, role, theme, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        displayName:
+          type: string
+        role:
+          $ref: "#/components/schemas/UserRole"
+        theme:
+          $ref: "#/components/schemas/ThemePreference"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    AuthSession:
+      type: object
+      required: [user, accessToken, accessTokenExpiresAt]
+      properties:
+        user:
+          $ref: "#/components/schemas/UserSummary"
+        accessToken:
+          type: string
+        accessTokenExpiresAt:
+          type: string
+          format: date-time
+    CurrentUserStats:
+      type: object
+      required: [totalSessions, prCount]
+      properties:
+        totalSessions:
+          type: integer
+          minimum: 0
+        prCount:
+          type: integer
+          minimum: 0
+    RegisterRequest:
+      type: object
+      required: [email, password, displayName, role]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+          maxLength: 72
+        displayName:
+          type: string
+          minLength: 2
+          maxLength: 80
+        role:
+          $ref: "#/components/schemas/UserRole"
+        theme:
+          $ref: "#/components/schemas/ThemePreference"
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+          maxLength: 72
+    UpdateCurrentUserRequest:
+      type: object
+      properties:
+        displayName:
+          type: string
+          minLength: 2
+          maxLength: 80
+        theme:
+          $ref: "#/components/schemas/ThemePreference"
+    PlanSet:
+      type: object
+      required: [id, order, setType, targetReps, targetLoadKg, notes]
+      properties:
+        id:
+          type: string
+          format: uuid
+        order:
+          type: integer
+          minimum: 0
+        setType:
+          $ref: "#/components/schemas/SetType"
+        targetReps:
+          type: integer
+          nullable: true
+        targetLoadKg:
+          type: number
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+    PlanExercise:
+      type: object
+      required: [id, order, exerciseId, exerciseName, muscleGroup, sets]
+      properties:
+        id:
+          type: string
+          format: uuid
+        order:
+          type: integer
+          minimum: 0
+        exerciseId:
+          type: string
+          format: uuid
+        exerciseName:
+          type: string
+        muscleGroup:
+          $ref: "#/components/schemas/MuscleGroup"
+        sets:
+          type: array
+          items:
+            $ref: "#/components/schemas/PlanSet"
+    WorkoutPlanSummary:
+      type: object
+      required: [id, name, accent, focusLabel, exerciseCount, muscleGroups, totalPlannedSets, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        accent:
+          oneOf:
+            - $ref: "#/components/schemas/PlanAccent"
+            - type: "null"
+        focusLabel:
+          type: string
+          nullable: true
+        exerciseCount:
+          type: integer
+          minimum: 0
+        muscleGroups:
+          type: array
+          items:
+            $ref: "#/components/schemas/MuscleGroup"
+        totalPlannedSets:
+          type: integer
+          minimum: 0
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    WorkoutPlanDetail:
+      allOf:
+        - $ref: "#/components/schemas/WorkoutPlanSummary"
+        - type: object
+          required: [exercises]
+          properties:
+            exercises:
+              type: array
+              items:
+                $ref: "#/components/schemas/PlanExercise"
+    WorkoutPlanListResponse:
+      type: object
+      required: [items, meta]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/WorkoutPlanSummary"
+        meta:
+          $ref: "#/components/schemas/PaginationMeta"
+    CreateWorkoutPlanRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 80
+        accent:
+          oneOf:
+            - $ref: "#/components/schemas/PlanAccent"
+            - type: "null"
+        focusLabel:
+          type: string
+          nullable: true
+    UpdateWorkoutPlanRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 80
+        accent:
+          oneOf:
+            - $ref: "#/components/schemas/PlanAccent"
+            - type: "null"
+        focusLabel:
+          type: string
+          nullable: true
+    AddPlanExerciseRequest:
+      type: object
+      required: [exerciseId]
+      properties:
+        exerciseId:
+          type: string
+          format: uuid
+    ReorderPlanExercisesRequest:
+      type: object
+      required: [orderedPlanExerciseIds]
+      properties:
+        orderedPlanExerciseIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+    CreatePlanSetRequest:
+      type: object
+      required: [setType]
+      properties:
+        setType:
+          $ref: "#/components/schemas/SetType"
+        targetReps:
+          type: integer
+          nullable: true
+        targetLoadKg:
+          type: number
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+    UpdatePlanSetRequest:
+      type: object
+      properties:
+        setType:
+          $ref: "#/components/schemas/SetType"
+        targetReps:
+          type: integer
+          nullable: true
+        targetLoadKg:
+          type: number
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+    Exercise:
+      type: object
+      required: [id, name, muscleGroup, source, ownerUserId, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        muscleGroup:
+          $ref: "#/components/schemas/MuscleGroup"
+        source:
+          $ref: "#/components/schemas/ExerciseSource"
+        ownerUserId:
+          type: string
+          format: uuid
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    ExercisesListResponse:
+      type: object
+      required: [items, meta]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Exercise"
+        meta:
+          $ref: "#/components/schemas/PaginationMeta"
+    CreateExerciseRequest:
+      type: object
+      required: [name, muscleGroup]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+        muscleGroup:
+          $ref: "#/components/schemas/MuscleGroup"
+    ExerciseHistoryEntry:
+      type: object
+      required: [sessionId, sessionCompletedAt, setId, setType, weightKg, reps, volume, isPR, notes]
+      properties:
+        sessionId:
+          type: string
+          format: uuid
+        sessionCompletedAt:
+          type: string
+          format: date-time
+        setId:
+          type: string
+          format: uuid
+        setType:
+          type: string
+          enum: [NORMAL, FAILURE, DROP_SET]
+        weightKg:
+          type: number
+        reps:
+          type: integer
+        volume:
+          type: number
+        isPR:
+          type: boolean
+        notes:
+          type: string
+          nullable: true
+    ExerciseHistoryResponse:
+      type: object
+      required: [exercise, items, meta]
+      properties:
+        exercise:
+          $ref: "#/components/schemas/Exercise"
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExerciseHistoryEntry"
+        meta:
+          $ref: "#/components/schemas/PaginationMeta"
+    SessionSet:
+      type: object
+      required: [id, exerciseId, exerciseName, muscleGroup, setType, weightKg, reps, notes, isPR, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        exerciseId:
+          type: string
+          format: uuid
+        exerciseName:
+          type: string
+        muscleGroup:
+          $ref: "#/components/schemas/MuscleGroup"
+        setType:
+          $ref: "#/components/schemas/SetType"
+        weightKg:
+          type: number
+        reps:
+          type: integer
+        notes:
+          type: string
+          nullable: true
+        isPR:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+    WorkoutSessionSummary:
+      type: object
+      required: [id, workoutPlanId, workoutPlanName, status, startedAt, completedAt, durationSeconds, totalSets, exerciseCount, totalVolumeKg]
+      properties:
+        id:
+          type: string
+          format: uuid
+        workoutPlanId:
+          type: string
+          format: uuid
+        workoutPlanName:
+          type: string
+        status:
+          $ref: "#/components/schemas/SessionStatus"
+        startedAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true
+        durationSeconds:
+          type: integer
+          nullable: true
+        totalSets:
+          type: integer
+          minimum: 0
+        exerciseCount:
+          type: integer
+          minimum: 0
+        totalVolumeKg:
+          type: number
+          minimum: 0
+    WorkoutSessionDetail:
+      allOf:
+        - $ref: "#/components/schemas/WorkoutSessionSummary"
+        - type: object
+          required: [sets]
+          properties:
+            sets:
+              type: array
+              items:
+                $ref: "#/components/schemas/SessionSet"
+    SessionsListResponse:
+      type: object
+      required: [items, meta]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/WorkoutSessionSummary"
+        meta:
+          $ref: "#/components/schemas/PaginationMeta"
+    StartSessionRequest:
+      type: object
+      required: [workoutPlanId]
+      properties:
+        workoutPlanId:
+          type: string
+          format: uuid
+    CreateSessionSetRequest:
+      type: object
+      required: [exerciseId, setType, weightKg, reps]
+      properties:
+        exerciseId:
+          type: string
+          format: uuid
+        setType:
+          $ref: "#/components/schemas/SetType"
+        weightKg:
+          type: number
+        reps:
+          type: integer
+        notes:
+          type: string
+          nullable: true
+    CompleteSessionRequest:
+      type: object
+      properties:
+        completedAt:
+          type: string
+          format: date-time
 paths:
   /health:
     get:
@@ -39,43 +516,57 @@ paths:
           description: Service status
   /auth/register:
     post:
-      summary: Register a new user
-      description: Creates the user, returns an access token session payload, and sets a rotating refresh token cookie.
+      summary: Register a new user and create a session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
       responses:
         "201":
           description: Session created
-        "409":
-          description: Email already in use
-        "429":
-          description: Auth rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthSession"
   /auth/login:
     post:
-      summary: Login
-      description: Verifies credentials, returns an access token session payload, and sets a rotating refresh token cookie.
+      summary: Login and create a session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
       responses:
         "200":
           description: Session created
-        "401":
-          description: Invalid credentials
-        "429":
-          description: Auth rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthSession"
   /auth/refresh:
     post:
-      summary: Rotate refresh token and access token
-      description: Uses the refresh token cookie to issue a fresh access token and a new refresh token cookie.
+      summary: Refresh the access token using the refresh cookie
       security:
         - refreshCookieAuth: []
       responses:
         "200":
           description: Session refreshed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthSession"
         "401":
-          description: Missing, invalid, expired, or revoked refresh token
-        "429":
-          description: Auth rate limit exceeded
+          description: Invalid refresh token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
   /auth/logout:
     post:
-      summary: Logout current session
-      description: Invalidates the current refresh token session and clears the refresh token cookie.
+      summary: Logout the current refresh-token session
       security:
         - refreshCookieAuth: []
       responses:
@@ -83,46 +574,492 @@ paths:
           description: Logged out
   /users/me:
     get:
-      summary: Get current user
+      summary: Get the current user
       security:
         - bearerAuth: []
       responses:
         "200":
-          description: Current user profile
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserSummary"
     patch:
-      summary: Update current user
+      summary: Update the current user's display name or theme
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateCurrentUserRequest"
+      responses:
+        "200":
+          description: Updated current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserSummary"
+  /users/me/stats:
+    get:
+      summary: Get profile stats for the current user
       security:
         - bearerAuth: []
       responses:
         "200":
-          description: Updated user profile
+          description: Current user profile stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CurrentUserStats"
   /workout-plans:
     get:
-      summary: List workout plans
+      summary: List workout plans owned by the current user
       security:
         - bearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: pageSize
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
       responses:
         "200":
-          description: Paginated workout plans
+          description: Paginated workout plan summaries
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkoutPlanListResponse"
     post:
-      summary: Create workout plan
+      summary: Create a workout plan
       security:
         - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateWorkoutPlanRequest"
       responses:
         "201":
           description: Workout plan created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkoutPlanDetail"
+  /workout-plans/{id}:
+    get:
+      summary: Get workout plan detail
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Workout plan detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkoutPlanDetail"
+    patch:
+      summary: Update workout plan metadata
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateWorkoutPlanRequest"
+      responses:
+        "200":
+          description: Updated workout plan detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkoutPlanDetail"
+    delete:
+      summary: Delete a workout plan
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Workout plan deleted
+  /workout-plans/{id}/exercises:
+    post:
+      summary: Add an exercise to a workout plan
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddPlanExerciseRequest"
+      responses:
+        "201":
+          description: Updated workout plan detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkoutPlanDetail"
+  /workout-plans/{planId}/exercises/{planExerciseId}:
+    delete:
+      summary: Remove an exercise from a workout plan
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: planId
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - in: path
+          name: planExerciseId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Exercise removed
+  /workout-plans/{planId}/exercises/reorder:
+    patch:
+      summary: Atomically reorder plan exercises
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: planId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReorderPlanExercisesRequest"
+      responses:
+        "200":
+          description: Updated workout plan detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkoutPlanDetail"
+  /workout-plans/{planId}/exercises/{planExerciseId}/sets:
+    post:
+      summary: Add a planned set to a workout plan exercise
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: planId
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - in: path
+          name: planExerciseId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePlanSetRequest"
+      responses:
+        "201":
+          description: Created plan set
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlanSet"
+  /plan-sets/{setId}:
+    patch:
+      summary: Update a planned set
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: setId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdatePlanSetRequest"
+      responses:
+        "200":
+          description: Updated plan set
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlanSet"
+    delete:
+      summary: Delete a planned set
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: setId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Planned set deleted
+  /exercises:
+    get:
+      summary: List accessible default and custom exercises
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: search
+          schema:
+            type: string
+        - in: query
+          name: muscleGroup
+          schema:
+            $ref: "#/components/schemas/MuscleGroup"
+        - in: query
+          name: source
+          schema:
+            $ref: "#/components/schemas/ExerciseSource"
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: pageSize
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+      responses:
+        "200":
+          description: Paginated exercise list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExercisesListResponse"
+    post:
+      summary: Create a custom exercise
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateExerciseRequest"
+      responses:
+        "201":
+          description: Created exercise
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Exercise"
+  /exercises/{id}/history:
+    get:
+      summary: Get exercise history for the current user
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: pageSize
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+      responses:
+        "200":
+          description: Exercise history
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExerciseHistoryResponse"
   /sessions:
     get:
-      summary: List workout sessions
+      summary: List sessions for the current user
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: pageSize
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+      responses:
+        "200":
+          description: Paginated session list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionsListResponse"
+    post:
+      summary: Start a workout session from a workout plan
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StartSessionRequest"
+      responses:
+        "201":
+          description: Session started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkoutSessionDetail"
+  /sessions/active:
+    get:
+      summary: Get the active session for the current user
       security:
         - bearerAuth: []
       responses:
         "200":
-          description: Paginated session list
-    post:
-      summary: Start workout session
+          description: Active session detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkoutSessionDetail"
+        "404":
+          description: No active session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+  /sessions/{id}:
+    get:
+      summary: Get a session by id
       security:
         - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Session detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkoutSessionDetail"
+  /sessions/{id}/sets:
+    post:
+      summary: Log a performed set in an active session
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSessionSetRequest"
       responses:
         "201":
-          description: Session started
+          description: Created performed set
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionSet"
+  /sessions/{id}/complete:
+    patch:
+      summary: Complete an active session
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CompleteSessionRequest"
+      responses:
+        "200":
+          description: Completed session detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkoutSessionDetail"

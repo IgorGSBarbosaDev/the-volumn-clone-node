@@ -1,14 +1,69 @@
-import userEvent from '@testing-library/user-event'
-import { cleanup, render, screen } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { cleanup, render, screen, waitFor } from '@testing-library/react'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { AppRoot } from './app-root'
-import { useThemeStore } from '../store/theme-store'
+import { useAuthStore } from '../features/auth/auth-store'
+
+vi.mock('../features/auth/auth-runtime', () => ({
+  bootstrapAuth: vi.fn(async () => undefined),
+}))
+
+vi.mock('../pages/landing-page', () => ({
+  LandingPage: () => <h1>Landing</h1>,
+}))
+
+vi.mock('../pages/login-page', () => ({
+  LoginPage: () => <h1>Login</h1>,
+}))
+
+vi.mock('../pages/register-page', () => ({
+  RegisterPage: () => <h1>Register</h1>,
+}))
+
+vi.mock('../pages/home-page', () => ({
+  HomePage: () => <h1>Home</h1>,
+}))
+
+vi.mock('../pages/workout-page', () => ({
+  WorkoutPage: () => <h1>Workouts</h1>,
+}))
+
+vi.mock('../pages/history-page', () => ({
+  HistoryPage: () => <h1>History</h1>,
+}))
+
+vi.mock('../pages/profile-page', () => ({
+  ProfilePage: () => <h1>Profile</h1>,
+}))
+
+vi.mock('../pages/profile-edit-page', () => ({
+  ProfileEditPage: () => <h1>Edit Profile</h1>,
+}))
+
+vi.mock('../pages/session-detail-page', () => ({
+  SessionDetailPage: () => <h1>Session Detail</h1>,
+}))
+
+vi.mock('../pages/exercise-history-page', () => ({
+  ExerciseHistoryPage: () => <h1>Exercise History</h1>,
+}))
+
+vi.mock('../pages/active-session-page', () => ({
+  ActiveSessionPage: () => <h1>Active Session</h1>,
+}))
+
+vi.mock('../pages/workout-plan-editor-page', () => ({
+  WorkoutPlanEditorPage: () => <h1>Plan Editor</h1>,
+}))
 
 describe('AppRoot', () => {
   beforeEach(() => {
-    window.history.pushState({}, '', '/home')
-    window.localStorage.clear()
-    useThemeStore.setState({ theme: 'rose' })
+    window.history.pushState({}, '', '/')
+    useAuthStore.setState({
+      accessToken: null,
+      accessTokenExpiresAt: null,
+      currentUser: null,
+      status: 'unauthenticated',
+    })
     document.documentElement.removeAttribute('data-theme')
   })
 
@@ -16,77 +71,49 @@ describe('AppRoot', () => {
     cleanup()
   })
 
-  it('renders the home route by default and cycles the theme from the dashboard top bar', async () => {
-    const user = userEvent.setup()
+  it('renders the public landing route', () => {
+    render(<AppRoot />)
 
+    expect(screen.getByRole('heading', { name: 'Landing' })).toBeInTheDocument()
+  })
+
+  it('redirects private routes to login when unauthenticated', async () => {
     window.history.pushState({}, '', '/home')
 
     render(<AppRoot />)
 
-    expect(document.documentElement).toHaveAttribute('data-theme', 'rose')
-    expect(screen.getByRole('heading', { name: 'Recommended Plans' })).toBeInTheDocument()
-
-    await user.click(screen.getByRole('button', { name: /switch theme/i }))
-
-    expect(document.documentElement).toHaveAttribute('data-theme', 'green')
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Login' })).toBeInTheDocument()
+    })
   })
 
-  it('renders the landing page on the public root route', () => {
-    window.history.pushState({}, '', '/')
-
-    render(<AppRoot />)
-
-    expect(screen.getByRole('heading', { name: 'Track Every Lift. Dominate Every Gym.' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Start Tracking Free' })).toBeInTheDocument()
-    expect(screen.getAllByRole('button', { name: 'Sign In' })[0]).toBeInTheDocument()
-  })
-
-  it('renders the workout page on the workout route', () => {
+  it('renders private routes when authenticated', async () => {
     window.history.pushState({}, '', '/workout')
+    useAuthStore.setState({
+      accessToken: 'token',
+      accessTokenExpiresAt: '2026-04-06T12:00:00.000Z',
+      currentUser: {
+        id: 'user-1',
+        email: 'alex@example.com',
+        displayName: 'Alex',
+        role: 'STUDENT',
+        theme: 'rose',
+        createdAt: '2026-04-06T12:00:00.000Z',
+        updatedAt: '2026-04-06T12:00:00.000Z',
+      },
+      status: 'authenticated',
+    })
 
     render(<AppRoot />)
 
     expect(screen.getByRole('heading', { name: 'Workouts' })).toBeInTheDocument()
   })
 
-  it('keeps the push workout detail screen theme-aware when cycling themes', async () => {
-    const user = userEvent.setup()
-    window.history.pushState({}, '', '/workout')
+  it('keeps auth-only public routes available when logged out', () => {
+    window.history.pushState({}, '', '/register')
 
     render(<AppRoot />)
 
-    await user.click(screen.getAllByRole('button', { name: 'Open Push workout' })[0])
-
-    expect(screen.getByRole('heading', { level: 1, name: 'Push' })).toBeInTheDocument()
-    expect(document.documentElement).toHaveAttribute('data-theme', 'rose')
-
-    await user.click(screen.getByRole('button', { name: /switch theme/i }))
-
-    expect(document.documentElement).toHaveAttribute('data-theme', 'green')
-    expect(screen.getByRole('heading', { level: 1, name: 'Push' })).toBeInTheDocument()
-  })
-
-  it('renders the history page on the history route', () => {
-    window.history.pushState({}, '', '/history')
-
-    render(<AppRoot />)
-
-    expect(screen.getByRole('heading', { name: 'History' })).toBeInTheDocument()
-  })
-
-  it('renders the profile page on the profile route', () => {
-    window.history.pushState({}, '', '/profile')
-
-    render(<AppRoot />)
-
-    expect(screen.getByRole('heading', { name: 'Alex Thompson' })).toBeInTheDocument()
-  })
-
-  it('renders the login page on the dedicated auth route', () => {
-    window.history.pushState({}, '', '/login')
-
-    render(<AppRoot />)
-
-    expect(screen.getByRole('heading', { name: 'Welcome back' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Register' })).toBeInTheDocument()
   })
 })

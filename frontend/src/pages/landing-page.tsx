@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom'
 import { BrandBadge } from '../components/brand-badge'
 
 const tickerItems = [
@@ -137,6 +138,8 @@ function FeatureIcon({ kind }: { kind: (typeof featureCards)[number]['icon'] }) 
 }
 
 export function LandingPage() {
+  const navigate = useNavigate()
+
   return (
     <main className="landing-shell">
       <section className="landing-hero">
@@ -153,11 +156,11 @@ export function LandingPage() {
           </p>
 
           <div className="landing-hero__actions">
-            <button className="landing-primary-action" type="button">
+            <button className="landing-primary-action" type="button" onClick={() => navigate('/register')}>
               <span>Start Tracking Free</span>
               <ArrowRightIcon />
             </button>
-            <button className="landing-secondary-action" type="button">
+            <button className="landing-secondary-action" type="button" onClick={() => navigate('/login')}>
               Sign In
             </button>
           </div>
@@ -324,11 +327,11 @@ export function LandingPage() {
         <p>Join athletes already using The Volumn to train smarter, log harder, and build progress that does not lie.</p>
 
         <div className="landing-cta__actions">
-          <button className="landing-primary-action" type="button">
+          <button className="landing-primary-action" type="button" onClick={() => navigate('/register')}>
             <span>Create Free Account</span>
             <ArrowRightIcon />
           </button>
-          <button className="landing-secondary-action" type="button">
+          <button className="landing-secondary-action" type="button" onClick={() => navigate('/login')}>
             Sign In
           </button>
         </div>

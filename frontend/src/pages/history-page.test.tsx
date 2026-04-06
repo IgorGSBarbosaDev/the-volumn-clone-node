@@ -1,20 +1,30 @@
-import { render, screen } from '@testing-library/react'
-import { MemoryRouter } from 'react-router-dom'
-import { describe, expect, it } from 'vitest'
+import { screen } from '@testing-library/react'
+import { describe, expect, it, vi } from 'vitest'
 import { HistoryPage } from './history-page'
+import { renderWithProviders } from '../test/render-with-providers'
+
+vi.mock('../features/sessions/use-sessions', () => ({
+  useSessions: () => ({
+    data: {
+      items: [
+        {
+          id: 'session-1',
+          status: 'COMPLETED',
+          totalSets: 8,
+          totalVolumeKg: 2500,
+          workoutPlanName: 'Push',
+        },
+      ],
+    },
+  }),
+}))
 
 describe('HistoryPage', () => {
-  it('renders the figma workout history screen and limits the list to 10 workouts', () => {
-    render(
-      <MemoryRouter initialEntries={['/history']}>
-        <HistoryPage />
-      </MemoryRouter>,
-    )
+  it('renders session history from the sessions query', () => {
+    renderWithProviders(<HistoryPage />)
 
     expect(screen.getByRole('heading', { name: 'History' })).toBeInTheDocument()
-    expect(screen.getByRole('searchbox', { name: 'Search sessions' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Open calendar view' })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'History' })).toHaveAttribute('aria-current', 'page')
-    expect(screen.getAllByRole('article')).toHaveLength(10)
+    expect(screen.getByRole('link', { name: 'Push' })).toHaveAttribute('href', '/sessions/session-1')
+    expect(screen.getByText(/Status: COMPLETED/)).toBeInTheDocument()
   })
 })

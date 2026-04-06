@@ -11,12 +11,11 @@ The Volumn is a responsive workout logging MVP delivered as a monorepo.
 
 ## Getting Started
 
-1. Copy `.env.example` to `backend/.env`.
+1. Copy the root `.env.example` file to `backend/.env`.
 2. Run `npm install`.
-3. Run `npm run db:up`.
-4. Run `npm run db:migrate`.
-5. Run `npm run db:seed`.
-6. Run `npm run dev`.
+3. Start Docker Desktop or another local Docker daemon.
+4. Run `npm run db:setup`.
+5. Run `npm run dev`.
 
 ## Workspace Commands
 

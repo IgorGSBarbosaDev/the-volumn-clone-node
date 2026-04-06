@@ -1,5 +1,5 @@
 import { createHash, randomUUID } from 'crypto'
-import jwt, { JsonWebTokenError, TokenExpiredError } from 'jsonwebtoken'
+import jwt from 'jsonwebtoken'
 import type { UserRole } from '@the-volumn/shared'
 import { env } from '../../../config/env.js'
 import type { AuthContext } from '../../../shared/http/auth-context.js'
@@ -9,6 +9,8 @@ type TokenUser = {
   id: string
   role: UserRole
 }
+
+const { JsonWebTokenError, TokenExpiredError } = jwt
 
 export type IssuedAuthTokens = {
   accessToken: string

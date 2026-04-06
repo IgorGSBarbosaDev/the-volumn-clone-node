@@ -1,6 +1,6 @@
 import { updateCurrentUserRequestSchema } from '@the-volumn/shared'
 import { Router } from 'express'
-import { getCurrentUser, updateCurrentUser } from '../application/current-user.service.js'
+import { getCurrentUser, getCurrentUserStats, updateCurrentUser } from '../application/current-user.service.js'
 import { getAuthContext } from '../../../shared/http/auth-context.js'
 import { parseBody } from '../../../shared/http/validate.js'
 
@@ -11,6 +11,12 @@ export function createUsersRouter() {
     const auth = getAuthContext(request)
     const user = await getCurrentUser(auth.userId)
     return response.status(200).json(user)
+  })
+
+  router.get('/me/stats', async (request, response) => {
+    const auth = getAuthContext(request)
+    const stats = await getCurrentUserStats(auth.userId)
+    return response.status(200).json(stats)
   })
 
   router.patch('/me', async (request, response) => {

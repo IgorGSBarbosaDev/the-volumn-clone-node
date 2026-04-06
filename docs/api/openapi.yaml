@@ -30,6 +30,483 @@ components:
             details:
               type: object
               additionalProperties: true
+    PaginationMeta:
+      type: object
+      required: [page, pageSize, total]
+      properties:
+        page:
+          type: integer
+          minimum: 1
+        pageSize:
+          type: integer
+          minimum: 1
+          maximum: 100
+        total:
+          type: integer
+          minimum: 0
+    UserRole:
+      type: string
+      enum: [STUDENT, TRAINER]
+    ThemePreference:
+      type: string
+      enum: [rose, green, black]
+    MuscleGroup:
+      type: string
+      enum: [CHEST, BACK, SHOULDERS, BICEPS, TRICEPS, QUADS, HAMSTRINGS, GLUTES, CALVES, CORE, FULL_BODY, OTHER]
+    PlanAccent:
+      type: string
+      enum: [rose, green, black, blue, amber, violet]
+    SetType:
+      type: string
+      enum: [WARM_UP, FEEDER, NORMAL, FAILURE, DROP_SET]
+    ExerciseSource:
+      type: string
+      enum: [DEFAULT, CUSTOM]
+    SessionStatus:
+      type: string
+      enum: [ACTIVE, COMPLETED]
+    UserSummary:
+      type: object
+      required: [id, email, displayName, role, theme, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        displayName:
+          type: string
+        role:
+          $ref: "#/components/schemas/UserRole"
+        theme:
+          $ref: "#/components/schemas/ThemePreference"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    AuthSession:
+      type: object
+      required: [user, accessToken, accessTokenExpiresAt]
+      properties:
+        user:
+          $ref: "#/components/schemas/UserSummary"
+        accessToken:
+          type: string
+        accessTokenExpiresAt:
+          type: string
+          format: date-time
+    CurrentUserStats:
+      type: object
+      required: [totalSessions, prCount]
+      properties:
+        totalSessions:
+          type: integer
+          minimum: 0
+        prCount:
+          type: integer
+          minimum: 0
+    RegisterRequest:
+      type: object
+      required: [email, password, displayName, role]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+          maxLength: 72
+        displayName:
+          type: string
+          minLength: 2
+          maxLength: 80
+        role:
+          $ref: "#/components/schemas/UserRole"
+        theme:
+          $ref: "#/components/schemas/ThemePreference"
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+          maxLength: 72
+    UpdateCurrentUserRequest:
+      type: object
+      properties:
+        displayName:
+          type: string
+          minLength: 2
+          maxLength: 80
+        theme:
+          $ref: "#/components/schemas/ThemePreference"
+    PlanSet:
+      type: object
+      required: [id, order, setType, targetReps, targetLoadKg, notes]
+      properties:
+        id:
+          type: string
+          format: uuid
+        order:
+          type: integer
+          minimum: 0
+        setType:
+          $ref: "#/components/schemas/SetType"
+        targetReps:
+          type: integer
+          nullable: true
+        targetLoadKg:
+          type: number
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+    PlanExercise:
+      type: object
+      required: [id, order, exerciseId, exerciseName, muscleGroup, sets]
+      properties:
+        id:
+          type: string
+          format: uuid
+        order:
+          type: integer
+          minimum: 0
+        exerciseId:
+          type: string
+          format: uuid
+        exerciseName:
+          type: string
+        muscleGroup:
+          $ref: "#/components/schemas/MuscleGroup"
+        sets:
+          type: array
+          items:
+            $ref: "#/components/schemas/PlanSet"
+    WorkoutPlanSummary:
+      type: object
+      required: [id, name, accent, focusLabel, exerciseCount, muscleGroups, totalPlannedSets, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        accent:
+          oneOf:
+            - $ref: "#/components/schemas/PlanAccent"
+            - type: "null"
+        focusLabel:
+          type: string
+          nullable: true
+        exerciseCount:
+          type: integer
+          minimum: 0
+        muscleGroups:
+          type: array
+          items:
+            $ref: "#/components/schemas/MuscleGroup"
+        totalPlannedSets:
+          type: integer
+          minimum: 0
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    WorkoutPlanDetail:
+      allOf:
+        - $ref: "#/components/schemas/WorkoutPlanSummary"
+        - type: object
+          required: [exercises]
+          properties:
+            exercises:
+              type: array
+              items:
+                $ref: "#/components/schemas/PlanExercise"
+    WorkoutPlanListResponse:
+      type: object
+      required: [items, meta]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/WorkoutPlanSummary"
+        meta:
+          $ref: "#/components/schemas/PaginationMeta"
+    CreateWorkoutPlanRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 80
+        accent:
+          oneOf:
+            - $ref: "#/components/schemas/PlanAccent"
+            - type: "null"
+        focusLabel:
+          type: string
+          nullable: true
+    UpdateWorkoutPlanRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 80
+        accent:
+          oneOf:
+            - $ref: "#/components/schemas/PlanAccent"
+            - type: "null"
+        focusLabel:
+          type: string
+          nullable: true
+    AddPlanExerciseRequest:
+      type: object
+      required: [exerciseId]
+      properties:
+        exerciseId:
+          type: string
+          format: uuid
+    ReorderPlanExercisesRequest:
+      type: object
+      required: [orderedPlanExerciseIds]
+      properties:
+        orderedPlanExerciseIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+    CreatePlanSetRequest:
+      type: object
+      required: [setType]
+      properties:
+        setType:
+          $ref: "#/components/schemas/SetType"
+        targetReps:
+          type: integer
+          nullable: true
+        targetLoadKg:
+          type: number
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+    UpdatePlanSetRequest:
+      type: object
+      properties:
+        setType:
+          $ref: "#/components/schemas/SetType"
+        targetReps:
+          type: integer
+          nullable: true
+        targetLoadKg:
+          type: number
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+    Exercise:
+      type: object
+      required: [id, name, muscleGroup, source, ownerUserId, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        muscleGroup:
+          $ref: "#/components/schemas/MuscleGroup"
+        source:
+          $ref: "#/components/schemas/ExerciseSource"
+        ownerUserId:
+          type: string
+          format: uuid
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    ExercisesListResponse:
+      type: object
+      required: [items, meta]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Exercise"
+        meta:
+          $ref: "#/components/schemas/PaginationMeta"
+    CreateExerciseRequest:
+      type: object
+      required: [name, muscleGroup]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+        muscleGroup:
+          $ref: "#/components/schemas/MuscleGroup"
+    ExerciseHistoryEntry:
+      type: object
+      required: [sessionId, sessionCompletedAt, setId, setType, weightKg, reps, volume, isPR, notes]
+      properties:
+        sessionId:
+          type: string
+          format: uuid
+        sessionCompletedAt:
+          type: string
+          format: date-time
+        setId:
+          type: string
+          format: uuid
+        setType:
+          type: string
+          enum: [NORMAL, FAILURE, DROP_SET]
+        weightKg:
+          type: number
+        reps:
+          type: integer
+        volume:
+          type: number
+        isPR:
+          type: boolean
+        notes:
+          type: string
+          nullable: true
+    ExerciseHistoryResponse:
+      type: object
+      required: [exercise, items, meta]
+      properties:
+        exercise:
+          $ref: "#/components/schemas/Exercise"
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExerciseHistoryEntry"
+        meta:
+          $ref: "#/components/schemas/PaginationMeta"
+    SessionSet:
+      type: object
+      required: [id, exerciseId, exerciseName, muscleGroup, setType, weightKg, reps, notes, isPR, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        exerciseId:
+          type: string
+          format: uuid
+        exerciseName:
+          type: string
+        muscleGroup:
+          $ref: "#/components/schemas/MuscleGroup"
+        setType:
+          $ref: "#/components/schemas/SetType"
+        weightKg:
+          type: number
+        reps:
+          type: integer
+        notes:
+          type: string
+          nullable: true
+        isPR:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+    WorkoutSessionSummary:
+      type: object
+      required: [id, workoutPlanId, workoutPlanName, status, startedAt, completedAt, durationSeconds, totalSets, exerciseCount, totalVolumeKg]
+      properties:
+        id:
+          type: string
+          format: uuid
+        workoutPlanId:
+          type: string
+          format: uuid
+        workoutPlanName:
+          type: string
+        status:
+          $ref: "#/components/schemas/SessionStatus"
+        startedAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true
+        durationSeconds:
+          type: integer
+          nullable: true
+        totalSets:
+          type: integer
+          minimum: 0
+        exerciseCount:
+          type: integer
+          minimum: 0
+        totalVolumeKg:
+          type: number
+          minimum: 0
+    WorkoutSessionDetail:
+      allOf:
+        - $ref: "#/components/schemas/WorkoutSessionSummary"
+        - type: object
+          required: [sets]
+          properties:
+            sets:
+              type: array
+              items:
+                $ref: "#/components/schemas/SessionSet"
+    SessionsListResponse:
+      type: object
+      required: [items, meta]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/WorkoutSessionSummary"
+        meta:
+          $ref: "#/components/schemas/PaginationMeta"
+    StartSessionRequest:
+      type: object
+      required: [workoutPlanId]
+      properties:
+        workoutPlanId:
+          type: string
+          format: uuid
+    CreateSessionSetRequest:
+      type: object
+      required: [exerciseId, setType, weightKg, reps]
+      properties:
+        exerciseId:
+          type: string
+          format: uuid
+        setType:
+          $ref: "#/components/schemas/SetType"
+        weightKg:
+          type: number
+        reps:
+          type: integer
+        notes:
+          type: string
+          nullable: true
+    CompleteSessionRequest:
+      type: object
+      properties:
+        completedAt:
+          type: string
+          format: date-time
 paths:
   /health:
     get:

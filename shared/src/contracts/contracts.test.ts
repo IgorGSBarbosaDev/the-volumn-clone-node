@@ -3,11 +3,15 @@ import {
   activeSessionResponseSchema,
   createExerciseRequestSchema,
   createWorkoutPlanRequestSchema,
+  currentUserStatsResponseSchema,
   errorEnvelopeSchema,
   loginRequestSchema,
   updateCurrentUserRequestSchema,
   registerRequestSchema,
+  sessionDetailResponseSchema,
   startSessionRequestSchema,
+  workoutPlanSummarySchema,
+  workoutSessionSummarySchema,
 } from '../index.js'
 
 describe('shared contracts', () => {

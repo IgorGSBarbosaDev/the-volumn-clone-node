@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client'
 import type { Response } from 'express'
 import { ZodError } from 'zod'
 
@@ -31,6 +32,26 @@ export function sendApiError(response: Response, error: unknown) {
         details: {
           issues: error.issues,
         },
+      },
+    })
+  }
+
+  if (error instanceof Prisma.PrismaClientKnownRequestError) {
+    if (error.code === 'P2021' || error.code === 'P2022') {
+      return response.status(503).json({
+        error: {
+          code: 'DATABASE_SCHEMA_NOT_READY',
+          message: 'Database schema is not initialized. Run the Prisma migration before using the API.',
+        },
+      })
+    }
+  }
+
+  if (error instanceof Prisma.PrismaClientInitializationError) {
+    return response.status(503).json({
+      error: {
+        code: 'DATABASE_UNAVAILABLE',
+        message: 'Database connection failed. Start PostgreSQL and try again.',
       },
     })
   }

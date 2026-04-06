@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import {
   isoDateTimeSchema,
+  muscleGroupSchema,
   paginatedMetaSchema,
   setTypeSchema,
   uuidSchema,
@@ -13,6 +14,8 @@ export const sessionPlanSnapshotSchema = workoutPlanDetailSchema
 export const sessionSetSchema = z.object({
   id: uuidSchema,
   exerciseId: uuidSchema,
+  exerciseName: z.string().min(1).max(120),
+  muscleGroup: muscleGroupSchema,
   setType: setTypeSchema,
   weightKg: z.number().nonnegative().max(1000),
   reps: z.number().int().positive().max(100),
@@ -30,6 +33,8 @@ export const workoutSessionSummarySchema = z.object({
   completedAt: isoDateTimeSchema.nullable(),
   durationSeconds: z.number().int().nonnegative().nullable(),
   totalSets: z.number().int().nonnegative(),
+  exerciseCount: z.number().int().nonnegative(),
+  totalVolumeKg: z.number().nonnegative(),
 })
 
 export const workoutSessionDetailSchema = workoutSessionSummarySchema.extend({

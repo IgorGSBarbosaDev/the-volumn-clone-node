@@ -10,5 +10,11 @@ export const updateCurrentUserRequestSchema = z.object({
 
 export const currentUserResponseSchema = userSummarySchema
 
+export const currentUserStatsResponseSchema = z.object({
+  totalSessions: z.number().int().nonnegative(),
+  prCount: z.number().int().nonnegative(),
+})
+
 export type UpdateCurrentUserRequest = z.infer<typeof updateCurrentUserRequestSchema>
 export type CurrentUserResponse = z.infer<typeof currentUserResponseSchema>
+export type CurrentUserStatsResponse = z.infer<typeof currentUserStatsResponseSchema>

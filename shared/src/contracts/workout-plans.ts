@@ -32,6 +32,8 @@ export const workoutPlanSummarySchema = z.object({
   accent: planAccentSchema.nullable(),
   focusLabel: z.string().max(80).nullable(),
   exerciseCount: z.number().int().nonnegative(),
+  muscleGroups: z.array(muscleGroupSchema),
+  totalPlannedSets: z.number().int().nonnegative(),
   createdAt: isoDateTimeSchema,
   updatedAt: isoDateTimeSchema,
 })
